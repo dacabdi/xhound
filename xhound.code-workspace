@@ -3,9 +3,6 @@
 		{
 			"name": "xhound",
 			"path": "."
-		},
-		{
-			"path": "../../.platformio"
 		}
 	],
 	"settings": {}
