@@ -113,7 +113,7 @@ void setup()
 
     Serial.println("Attaching BT disconnect interrupt...");
     pinMode(BTINTPIN, INPUT_PULLDOWN);
-    //attachInterrupt(digitalPinToInterrupt(BTINTPIN), btIntHandler, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(BTINTPIN), btIntHandler, CHANGE);
 
     Serial.println("Finished Setup");
 	delay(2000);
@@ -129,7 +129,7 @@ void loop()
     }
 
     CPUPowerController::checkForSleep();
-    gpsConfig->checkForStatus();
+    //gpsConfig->checkForStatus();
 	eavesdropper->eavesdrop();
 }
 

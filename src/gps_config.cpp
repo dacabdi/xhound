@@ -22,7 +22,8 @@ namespace GNSS_RTK_ROVER
         configureNMEAMsgs();
         m_gps.saveConfiguration();
         
-        configureForNMEA();
+        //configureForNMEA();
+        configureForUBXAndNMEA();
     }
 
     void GPSConfig::checkForStatus()
@@ -78,6 +79,8 @@ namespace GNSS_RTK_ROVER
     // TODO handle as composite
     void GPSConfig::configureForUBXAndNMEA()
     {
+        // TODO correct this
+        m_onNMEA();
         m_gps.setUART1Output(COM_TYPE_UBX | COM_TYPE_NMEA);                
     }
 
