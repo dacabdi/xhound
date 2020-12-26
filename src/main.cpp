@@ -19,7 +19,7 @@
 #include "eavesdrop.h"
 
 #define MONITOR_SERIAL_BAUD 115200
-#define EAVESDROP_SERIAL_BAUD 9600
+#define EAVESDROP_SERIAL_BAUD 38400
 
 #define BTINTPIN 0
 #define ONOFFPIN 1
