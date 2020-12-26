@@ -13,7 +13,8 @@ namespace GNSS_RTK_ROVER
         void initialize();
         void factoryReset();
         void checkForStatus();
-        
+        void configureForUBXAndNMEA();
+
         private:
         void connect();
         void configureUnusedPorts();

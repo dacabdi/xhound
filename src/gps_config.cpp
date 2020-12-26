@@ -21,7 +21,7 @@ namespace GNSS_RTK_ROVER
         configureI2C();
         configureNMEAMsgs();
         m_gps.saveConfiguration();
-
+        
         configureForNMEA();
     }
 
@@ -29,7 +29,6 @@ namespace GNSS_RTK_ROVER
     {
         if(!m_checkCount)
         {
-            Serial.println("Checking...");
             if(m_usingUBX && m_gps.getVal8(0x10740001, 1) == 0)
             {
                 m_usingUBX = !m_usingUBX;
@@ -64,7 +63,6 @@ namespace GNSS_RTK_ROVER
         m_gps.setI2COutput(COM_TYPE_UBX);    
     }
     
-
     void GPSConfig::configureForNMEA()
     {
         m_onNMEA();
@@ -75,6 +73,12 @@ namespace GNSS_RTK_ROVER
     {
         m_onUBX();
         m_gps.setUART1Output(COM_TYPE_UBX);                
+    }
+
+    // TODO handle as composite
+    void GPSConfig::configureForUBXAndNMEA()
+    {
+        m_gps.setUART1Output(COM_TYPE_UBX | COM_TYPE_NMEA);                
     }
 
     void GPSConfig::configureNMEAMsgs()

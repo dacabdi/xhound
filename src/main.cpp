@@ -21,6 +21,7 @@
 #define MONITOR_SERIAL_BAUD 115200
 #define EAVESDROP_SERIAL_BAUD 9600
 
+#define BTINTPIN 0
 #define ONOFFPIN 1
 #define POWERPIN 2
 #define BUZZERPIN 3
@@ -35,6 +36,16 @@ GPSConfig* gpsConfig;
 Eavesdropper* eavesdropper;
 SimpleEavesdropper simple_eavesdropper(Serial1);
 UBXEavesdropper ubx_eavesdropper(Serial1);
+
+volatile bool btConnected = false;
+volatile bool btDueReset = false;
+
+void btIntHandler()
+{
+    btConnected = !btConnected;
+    btDueReset = !btConnected;
+    digitalWrite(LED_BUILTIN, btConnected ? HIGH : LOW);
+}
 
 int CarrierSolutionType = 0;
 
@@ -66,7 +77,7 @@ void setup()
             display->initialize();
             gpsConfig->initialize();
 
-            digitalWrite(LED_BUILTIN, HIGH);
+            //digitalWrite(LED_BUILTIN, HIGH);
             display->printTextInRect("Awake 789ABCDEF!");
         },
         [&](){ // onSleep
@@ -75,7 +86,7 @@ void setup()
             display->printTextInRect("Sleeping...");
             delay(500);
 
-            digitalWrite(LED_BUILTIN, LOW);
+            //digitalWrite(LED_BUILTIN, LOW);
             gps_bt_dp_power.turnOff();
         });
 
@@ -96,8 +107,13 @@ void setup()
         },
         [&](){ // onFixedUBX
             Serial.println("Using UBX");
-            eavesdropper = &ubx_eavesdropper;
+            // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
+            eavesdropper = &simple_eavesdropper;
         });
+
+    Serial.println("Attaching BT disconnect interrupt...");
+    pinMode(BTINTPIN, INPUT_PULLDOWN);
+    //attachInterrupt(digitalPinToInterrupt(BTINTPIN), btIntHandler, CHANGE);
 
     Serial.println("Finished Setup");
 	delay(2000);
@@ -105,6 +121,13 @@ void setup()
 
 void loop()
 {
+    if(btDueReset)
+    {
+        Serial.println("BT disconnected, defaulting GNSS config");
+        gpsConfig->initialize();
+        btDueReset = false;
+    }
+
     CPUPowerController::checkForSleep();
     gpsConfig->checkForStatus();
 	eavesdropper->eavesdrop();
