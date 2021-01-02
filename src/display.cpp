@@ -35,7 +35,8 @@ namespace GNSS_RTK_ROVER
     void DisplaySSD1306::printTextInRect(std::string text)
     {
         m_display.clearDisplay();
-        m_display.drawRect(9, 2, 110, 28, SSD1306_WHITE);
+        //m_display.drawRect(9, 2, 110, 28, SSD1306_WHITE);
+        m_display.drawRect(1, 1, 127, 31, SSD1306_WHITE);
         m_display.setTextSize(1);
         m_display.setTextColor(SSD1306_WHITE);
         m_display.setCursor(64-((text.size()/2) * SSD1306_CHAR_WIDTH), 16 - SSD1306_CHAR_HEIGHT/2);
@@ -43,7 +44,15 @@ namespace GNSS_RTK_ROVER
         for(size_t i =0 ; i < text.size(); i++) {
             m_display.print(text[i]);
         }
+        m_display.display();
+        delay(2000);
+        m_display.clearDisplay();
+        m_display.display();
+    }
 
+    void DisplaySSD1306::printBitMap(std::int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h, int color)
+    {
+        m_display.drawBitmap(x, y, bitmap, w, h, color);
         m_display.display();
     }
 }

@@ -13,13 +13,16 @@ namespace GNSS_RTK_ROVER
         void initialize();
         void factoryReset();
         void checkForStatus();
-        
+        void configureForNMEA();
+        uint8_t getSolution();
+
         private:
         void connect();
         void configureUnusedPorts();
         void configureI2C();
-        void configureForNMEA();
         void configureNMEAMsgs();
+        void disableUBXNavMsgs();
+        void disableUBXRxmMsgs();
         void configureForUBX();
         
         SFE_UBLOX_GPS m_gps;
