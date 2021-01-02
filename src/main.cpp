@@ -17,11 +17,12 @@
 #include "eulerAngl.h"
 #include "correction.h"
 #include "eavesdrop.h"
+#include "bitmaps.h"
 
 #define MONITOR_SERIAL_BAUD 115200
 #define EAVESDROP_SERIAL_BAUD 38400
 
-#define BTINTPIN 0
+#define BTSTATEPIN 0
 #define ONOFFPIN 1
 #define POWERPIN 2
 #define BUZZERPIN 3
@@ -37,17 +38,58 @@ Eavesdropper* eavesdropper;
 SimpleEavesdropper simple_eavesdropper(Serial1);
 UBXEavesdropper ubx_eavesdropper(Serial1);
 
-volatile bool btConnected = false;
-volatile bool btDueReset = false;
+bool btConnectionLastState = false;
+int checkCarriesSolutionFlag = 0;
 
-void btIntHandler()
+void checkBTState()
 {
-    btConnected = !btConnected;
-    btDueReset = !btConnected;
-    digitalWrite(LED_BUILTIN, btConnected ? HIGH : LOW);
+    bool btConnectionCurrentState = digitalRead(BTSTATEPIN);
+
+    if(btConnectionCurrentState != btConnectionLastState)
+    {
+        if(btConnectionCurrentState)
+        {
+            Serial.println("BT Connected");
+            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
+            display->printBitMap(84, 0, bt_on, 21, 32, WHITE);
+        }
+        else
+        {
+            Serial.println("BT disconnected, defaulting GNSS config");
+            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
+            display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
+            gpsConfig->configureForNMEA();
+        }
+
+        btConnectionLastState = btConnectionCurrentState;
+    }
 }
 
-int CarrierSolutionType = 0;
+void checkAndDisplayCarrierSolution() 
+{
+    if(!checkCarriesSolutionFlag)
+    {
+        switch(gpsConfig->getSolution())
+        {
+            case 0:
+                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
+                display->printBitMap(0, 0, dgps, 64, 15, WHITE);
+                Serial.println("No Solution");
+                break;
+            case 1:
+                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
+                display->printBitMap(0, 0, float_rtk, 64, 15, WHITE);
+                Serial.println("Float RTK");
+                break;
+            case 2:
+                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
+                display->printBitMap(0, 0, fixed_rtk, 64, 15, WHITE);
+                Serial.println("Fix RTK");
+            break;
+        }
+    }
+    checkCarriesSolutionFlag = (checkCarriesSolutionFlag + 1) % 1000000;
+}
 
 void setup()
 {
@@ -55,7 +97,10 @@ void setup()
 	Serial.begin(MONITOR_SERIAL_BAUD);
 	Serial1.begin(EAVESDROP_SERIAL_BAUD);
 	delay(2000);
+
 	Serial.println("UARTS & I2C Initialized...");
+
+    pinMode(BTSTATEPIN, INPUT);
 
     display = new DisplaySSD1306(
         [&](){ // onConnected
@@ -77,17 +122,22 @@ void setup()
             display->initialize();
             gpsConfig->initialize();
 
-            //digitalWrite(LED_BUILTIN, HIGH);
-            display->printTextInRect("Awake 789ABCDEF!");
+            display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
+            display->printBitMap(0, 0, logo_128x32, 128, 32, WHITE);
+            delay(5000);
+            display->printTextInRect("Awake ...");
+            checkBTState();
+            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+            display->printBitMap(106, 0, battery_100, 21, 32, WHITE);
+            display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
         },
         [&](){ // onSleep
             buzzer.buzzPowerOff();
-            Serial.println("Sleeping...");
-            display->printTextInRect("Sleeping...");
-            delay(500);
-
-            //digitalWrite(LED_BUILTIN, LOW);
+            Serial.println("Turning Off ...");
+            display->printTextInRect("Turning Off ...");
+            delay(2000);
             gps_bt_dp_power.turnOff();
+            btConnectionLastState = false;
         });
 
     Serial.println("Setting up GPS config");
@@ -101,19 +151,16 @@ void setup()
         [](){ // onReset
             Serial.println("Ublox GNSS Reseted");
         },
-        [&](){ // onFixedNMEA
+        [&](){ // onNMEA
             Serial.println("Using NMEA");
             eavesdropper = &simple_eavesdropper;
         },
-        [&](){ // onFixedUBX
+        [&](){ // onUBX
             Serial.println("Using UBX");
             // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
             eavesdropper = &simple_eavesdropper;
         });
 
-    Serial.println("Attaching BT disconnect interrupt...");
-    pinMode(BTINTPIN, INPUT_PULLDOWN);
-    attachInterrupt(digitalPinToInterrupt(BTINTPIN), btIntHandler, CHANGE);
 
     Serial.println("Finished Setup");
 	delay(2000);
@@ -121,23 +168,17 @@ void setup()
 
 void loop()
 {
-    if(btDueReset)
-    {
-        Serial.println("BT disconnected, defaulting GNSS config");
-        gpsConfig->initialize();
-        btDueReset = false;
-    }
-
+    checkBTState();
     CPUPowerController::checkForSleep();
     //gpsConfig->checkForStatus();
 	eavesdropper->eavesdrop();
+    checkAndDisplayCarrierSolution();
 }
 
 //----------------------Functions----------------------------------;
 
 // void displayGpsData()
 // {
-//   CarrierSolutionType = gpsConfig.getCarrierSolutionType();
 //   // First, let's collect the position data
 //   int32_t latitude = gpsConfig.getHighResLatitude();
 //   int8_t latitudeHp = gpsConfig.getHighResLatitudeHp();
@@ -208,13 +249,7 @@ void loop()
 
 //   // Calculate the height above ellipsoid in mm * 10^-1
 //   f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
-//   // Now convert to m
-//   f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
-
-//   // Calculate the height above mean sea level in mm * 10^-1
-//   f_msl = (msl * 10) + mslHp;
-//   // Now convert to m
-//   f_msl = f_msl / 10000.0; // Convert from mm * 10^-1 to m
+//   // Now convert to mvoid checkAndDisplayCarrierSolution() 
 //   // Convert the horizontal accuracy (mm * 10^-1) to a float
 //   f_accuracy = accuracy;
 //   // Now convert to m
@@ -229,7 +264,7 @@ void loop()
 //   Serial.print(", Accuracy (m): ");
 //   Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
 
-//   switch(CarrierSolutionType)
+//   switch(gpsConfig->getSolution())
 //   {
 //     case 0:
 //       Serial.println(", No Solution");

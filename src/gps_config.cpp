@@ -17,13 +17,12 @@ namespace GNSS_RTK_ROVER
     {
         connect();
         m_gps.setSerialRate(m_serialBaud, COM_PORT_UART1);
+        m_gps.setUART1Output(COM_TYPE_UBX | COM_TYPE_NMEA);                
         configureUnusedPorts();
         configureI2C();
-        configureNMEAMsgs();
         m_gps.saveConfiguration();
         
-        //configureForNMEA();
-        configureForUBXAndNMEA();
+        configureForNMEA();
     }
 
     void GPSConfig::checkForStatus()
@@ -66,22 +65,15 @@ namespace GNSS_RTK_ROVER
     
     void GPSConfig::configureForNMEA()
     {
+        disableUBXNavMsgs();
+        disableUBXRxmMsgs();
+        configureNMEAMsgs();
         m_onNMEA();
-        m_gps.setUART1Output(COM_TYPE_NMEA);                
     }
 
     void GPSConfig::configureForUBX()
     {
         m_onUBX();
-        m_gps.setUART1Output(COM_TYPE_UBX);                
-    }
-
-    // TODO handle as composite
-    void GPSConfig::configureForUBXAndNMEA()
-    {
-        // TODO correct this
-        m_onNMEA();
-        m_gps.setUART1Output(COM_TYPE_UBX | COM_TYPE_NMEA);                
     }
 
     void GPSConfig::configureNMEAMsgs()
@@ -100,11 +92,56 @@ namespace GNSS_RTK_ROVER
         m_gps.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
     }
 
+    void GPSConfig::disableUBXNavMsgs()
+    {
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_ATT, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_CLOCK, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_DOP, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_EOE, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_GEOFENCE, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_HPPOSECEF, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_HPPOSLLH, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_ODO, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_ORB, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_POSECEF, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_POSLLH, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_PVT, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_RELPOSNED, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_RESETODO, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_SAT, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_SIG, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_STATUS, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_SVIN, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_TIMEBDS, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_TIMEGAL, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_TIMEGLO, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_TIMEGPS, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_TIMELS, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_TIMEUTC, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_VELECEF, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_NAV, UBX_NAV_VELNED, COM_PORT_UART1);
+    }
+
+    void GPSConfig::disableUBXRxmMsgs()
+    {
+        m_gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_MEASX, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_PMREQ, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_RLM, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_RTCM, COM_PORT_UART1);
+        m_gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1);       
+    }
+
     void GPSConfig::factoryReset()
     {
         m_gps.factoryReset();
         delay(5000);
         m_onReset();
         connect();
+    }
+
+    uint8_t GPSConfig::getSolution()
+    {
+        return m_gps.getCarrierSolutionType();
     }
 }
