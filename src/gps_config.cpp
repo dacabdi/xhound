@@ -55,7 +55,8 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::configureUnusedPorts()
     {
-        m_gps.setUART2Output(0);              
+        m_gps.setUART2Output(0);
+        m_gps.setSPIOutput(0);
     }
 
     void GPSConfig::configureI2C()

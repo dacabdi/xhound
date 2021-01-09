@@ -22,6 +22,7 @@
 #define MONITOR_SERIAL_BAUD 115200
 #define EAVESDROP_SERIAL_BAUD 38400
 
+#define BATTERYPIN A1
 #define BTSTATEPIN 0
 #define ONOFFPIN 1
 #define POWERPIN 2
@@ -38,57 +39,175 @@ Eavesdropper* eavesdropper;
 SimpleEavesdropper simple_eavesdropper(Serial1);
 UBXEavesdropper ubx_eavesdropper(Serial1);
 
+// volatile int VoltageDivider =2;
+// volatile float AREF = 3.3;
+// volatile int BatteryReading = 0;
+// volatile int BatteryActualLevel = 0;
+// volatile int BatteryLastLevel = 150;
+// volatile float BatteryVoltage = 0;
+// volatile int checkBatteryFlag = 0;
+
+// volatile bool btConnectionLastState = false;
+
+// volatile int checkCarriesSolutionFlag = 0;
+// volatile int ActualCarrierSolution = 0;
+// volatile int LastCarrierSolution = 150;
+
+int checkBatteryFlag = 0;
+const int VoltageDivider =2;
+const float AREF = 3.3;
+int BatteryReading = 0;
+int BatteryActualLevel = 0;
+int BatteryLastLevel = 150;
+float BatteryVoltage = 0;
+
+int checkBTstateFlag = 0;
 bool btConnectionLastState = false;
+
 int checkCarriesSolutionFlag = 0;
+int ActualCarrierSolution = 0;
+int LastCarrierSolution = 150;
+
+void monitorPrintBattery()
+{
+    Serial.print("Battery Reading = ");
+    Serial.print(BatteryReading);
+    Serial.print(" --- ");
+    Serial.print("Battery Voltage = ");
+    Serial.print(BatteryVoltage);
+    Serial.print(" V");
+    Serial.print(" --- ");
+    Serial.print("Battery Level = ");
+    Serial.print(BatteryActualLevel);
+    Serial.println(" % ");
+}
+
+void checkBattery()
+{
+    if(!checkBatteryFlag)
+    {   
+        BatteryReading = analogRead(BATTERYPIN);
+        BatteryVoltage = (VoltageDivider * AREF * BatteryReading) / 1023;
+        display->printText("VBat = ", 5, 25);
+        display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the Voltage Area.
+        display->printFloatVariable(BatteryVoltage, 45, 25);
+    
+        if(BatteryVoltage >= 4)
+        {
+            BatteryActualLevel = 100;
+            if(BatteryLastLevel != BatteryActualLevel)
+            {
+                display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(106, 0, battery_100, 21, 32, WHITE);
+                monitorPrintBattery();
+            }
+        }
+
+        if(BatteryVoltage < 4 && BatteryVoltage >= 3.8)
+        {
+            BatteryActualLevel = 75;
+            if(BatteryLastLevel != BatteryActualLevel)
+            {
+                display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(106, 0, battery_75, 21, 32, WHITE);
+                monitorPrintBattery();
+            }
+        }
+
+        if(BatteryVoltage < 3.8 && BatteryVoltage >= 3.3)
+        {
+            BatteryActualLevel = 50;
+            if(BatteryLastLevel != BatteryActualLevel)
+            {
+                display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(106, 0, battery_50, 21, 32, WHITE);
+                monitorPrintBattery();
+            }
+        }
+
+        if(BatteryVoltage < 3.3 && BatteryVoltage >= 2.9)
+        {
+            BatteryActualLevel = 25;
+            if(BatteryLastLevel != BatteryActualLevel)
+            {
+                display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(106, 0, battery_25, 21, 32, WHITE);
+                monitorPrintBattery();
+            }
+        }
+
+        if(BatteryVoltage < 2.7)
+            {
+            BatteryActualLevel = 0;
+            if(BatteryLastLevel != BatteryActualLevel)
+            {
+                display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(106, 0, battery_0, 21, 32, WHITE);
+                monitorPrintBattery();
+            }
+        }
+        BatteryLastLevel = BatteryActualLevel;
+    }
+    checkBatteryFlag = (checkBatteryFlag + 1) % 2000000;
+}
 
 void checkBTState()
 {
-    bool btConnectionCurrentState = digitalRead(BTSTATEPIN);
-
-    if(btConnectionCurrentState != btConnectionLastState)
+    if(!checkBTstateFlag)
     {
-        if(btConnectionCurrentState)
-        {
-            Serial.println("BT Connected");
-            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(84, 0, bt_on, 21, 32, WHITE);
-        }
-        else
-        {
-            Serial.println("BT disconnected, defaulting GNSS config");
-            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
-            gpsConfig->configureForNMEA();
-        }
+        bool btConnectionCurrentState = digitalRead(BTSTATEPIN);
 
-        btConnectionLastState = btConnectionCurrentState;
+        if(btConnectionCurrentState != btConnectionLastState)
+        {
+            if(btConnectionCurrentState)
+            {
+                Serial.println("BT Connected");
+                display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(84, 0, bt_on, 21, 32, WHITE);
+            }
+            else
+            {
+                Serial.println("BT disconnected, defaulting GNSS config");
+                display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
+                display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
+                gpsConfig->initialize();
+            }
+            btConnectionLastState = btConnectionCurrentState;
+            Serial.println("BT Status Updated");
+        }
     }
+        checkBTstateFlag = (checkBTstateFlag + 1) % 1000000;
 }
 
 void checkAndDisplayCarrierSolution() 
 {
     if(!checkCarriesSolutionFlag)
     {
-        switch(gpsConfig->getSolution())
+        ActualCarrierSolution = gpsConfig->getSolution();
+        if(ActualCarrierSolution != LastCarrierSolution)
         {
-            case 0:
-                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-                display->printBitMap(0, 0, dgps, 64, 15, WHITE);
-                Serial.println("No Solution");
+            switch(ActualCarrierSolution)
+            {
+                case 0:
+                    display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
+                    display->printBitMap(0, 2, dgps, 64, 15, WHITE);
+                    Serial.println("No Solution");
+                    break;
+                case 1:
+                    display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
+                    display->printBitMap(0, 2, float_rtk, 64, 15, WHITE);
+                    Serial.println("Float RTK");
+                    break;
+                case 2:
+                    display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
+                    display->printBitMap(0, 2, fixed_rtk, 64, 15, WHITE);
+                    Serial.println("Fix RTK");
                 break;
-            case 1:
-                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-                display->printBitMap(0, 0, float_rtk, 64, 15, WHITE);
-                Serial.println("Float RTK");
-                break;
-            case 2:
-                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-                display->printBitMap(0, 0, fixed_rtk, 64, 15, WHITE);
-                Serial.println("Fix RTK");
-            break;
+            }
+            LastCarrierSolution = ActualCarrierSolution;
         }
     }
-    checkCarriesSolutionFlag = (checkCarriesSolutionFlag + 1) % 1000000;
+        checkCarriesSolutionFlag = (checkCarriesSolutionFlag + 1) % 1000000;
 }
 
 void setup()
@@ -125,11 +244,14 @@ void setup()
             display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
             display->printBitMap(0, 0, logo_128x32, 128, 32, WHITE);
             delay(5000);
-            display->printTextInRect("Awake ...");
+            display->printTextInRect("Waking Up ...");
+            Serial.println("Waking Up ...");
             checkBTState();
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_100, 21, 32, WHITE);
-            display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
+            checkBattery();
+            checkAndDisplayCarrierSolution();
+            display->printBitMap(80, 0, division_line_v, 1, 32, WHITE);
+            display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
+            display->printBitMap(106, 0, battery_unknown, 21, 32, WHITE);
         },
         [&](){ // onSleep
             buzzer.buzzPowerOff();
@@ -138,6 +260,8 @@ void setup()
             delay(2000);
             gps_bt_dp_power.turnOff();
             btConnectionLastState = false;
+            BatteryLastLevel = 150;
+            LastCarrierSolution = 150;
         });
 
     Serial.println("Setting up GPS config");
@@ -168,6 +292,8 @@ void setup()
 
 void loop()
 {
+    //gpsConfig->factoryReset();
+    checkBattery();
     checkBTState();
     CPUPowerController::checkForSleep();
     //gpsConfig->checkForStatus();

@@ -15,9 +15,11 @@ namespace GNSS_RTK_ROVER
         public:
         DisplaySSD1306(std::function<void()> onConnected, std::function<void()> onTryingConnection);
         void initialize();
+        void printText(std::string text, int16_t x, int16_t y);
+        void printFloatVariable(std::float_t float_variable, int16_t x, int16_t y);
         void printTextInRect(std::string text);
         void printBitMap(std::int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h, int color);
-    
+        void printFloat(std::float_t variable, int16_t x, int16_t y);
         private:
         void connect();
 
