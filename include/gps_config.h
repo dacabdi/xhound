@@ -8,7 +8,7 @@ namespace GNSS_RTK_ROVER
     class GPSConfig
     {
         public:
-        GPSConfig(int serialBaud, std::function<void()> onConnected, std::function<void()> onTryingConnection,
+        GPSConfig(SFE_UBLOX_GPS* gps, int serialBaud, std::function<void()> onConnected, std::function<void()> onTryingConnection,
             std::function<void()> onReset, std::function<void()> onNMEA, std::function<void()> onUBX);
         void initialize();
         void factoryReset();
@@ -25,7 +25,7 @@ namespace GNSS_RTK_ROVER
         void disableUBXRxmMsgs();
         void configureForUBX();
         
-        SFE_UBLOX_GPS m_gps;
+        SFE_UBLOX_GPS* m_gps;
         int m_serialBaud;
         bool m_usingUBX;
         int m_checkCount;

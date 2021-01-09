@@ -1,3 +1,5 @@
+#ifndef UNIT_TEST
+
 #undef min
 #undef max
 
@@ -210,6 +212,7 @@ void checkAndDisplayCarrierSolution()
         checkCarriesSolutionFlag = (checkCarriesSolutionFlag + 1) % 1000000;
 }
 
+
 void setup()
 {
 	Wire.begin();
@@ -403,3 +406,5 @@ void loop()
 //       break;
 //   }
 // }
+
+#endif // UNIT_TEST
