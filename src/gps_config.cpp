@@ -3,6 +3,8 @@
 #include "SparkFun_Ublox_Arduino_Library.h"
 #include "gps_config.h"
 
+bool is_base_activated = false;
+
 namespace GNSS_RTK_ROVER 
 {
     GPSConfig::GPSConfig(int serialBaud, std::function<void()> onConnected, std::function<void()> onTryingConnection,
@@ -17,12 +19,17 @@ namespace GNSS_RTK_ROVER
     {
         connect();
         m_gps.setSerialRate(m_serialBaud, COM_PORT_UART1);
-        m_gps.setUART1Output(COM_TYPE_UBX | COM_TYPE_NMEA);                
+        m_gps.setUART1Output(COM_TYPE_UBX | COM_TYPE_NMEA);
+        m_gps.setNavigationFrequency(5);
+
+        configureDisableBase();
         configureUnusedPorts();
         configureI2C();
-        m_gps.saveConfiguration();
-        
         configureForNMEA();
+        configureAntenna();
+        m_gps.saveConfiguration();
+
+        //m_gps.getEsfInfo
     }
 
     void GPSConfig::checkForStatus()
@@ -55,8 +62,9 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::configureUnusedPorts()
     {
-        m_gps.setUART2Output(0);
         m_gps.setSPIOutput(0);
+        m_gps.setUART2Output(0);
+        m_gps.setUSBOutput(COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3);
     }
 
     void GPSConfig::configureI2C()
@@ -141,8 +149,79 @@ namespace GNSS_RTK_ROVER
         connect();
     }
 
+    void GPSConfig::configureAntenna()
+    {
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_VOLTCTRL, 1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_SHORTDET,1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_SHORTDET_POL, 1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_OPENDET,1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_OPENDET_POL, 1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_PWRDOWN,1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_PWRDOWN_POL, 1);
+        m_gps.setVal(UBLOX_CFG_HW_ANT_CFG_RECOVER,1);
+    }
+
+    void GPSConfig::configureAsBase()
+    {
+        m_gps.setUART2Output(COM_TYPE_RTCM3);
+        m_gps.setSerialRate(57600, COM_PORT_UART2);
+        m_gps.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2 | COM_PORT_USB, 1); //Enable message 1005 to output through UART2, message every second
+        m_gps.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2 | COM_PORT_USB, 10); //Enable message every 10 seconds
+        m_gps.enableSurveyMode(60, 5.000); //Enable Survey in, 60 seconds, 5.0m
+        Serial.println("Base Configuration completed");
+    }
+
+    void GPSConfig::configureDisableBase()
+    {
+        m_gps.setVal(UBLOX_CFG_TMODE_MODE, 0);  //Turn Off Survey Mode
+        m_gps.setUART2Output(0);
+        m_gps.disableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2 | COM_PORT_USB, 1); //Enable message 1005 to output through UART2, message every second
+        m_gps.disableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.disableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.disableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.disableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2 | COM_PORT_USB, 1);
+        m_gps.disableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2 | COM_PORT_USB, 10); //Enable message every 10 seconds
+        Serial.println("Base Mode Terminated");
+    }
+
     uint8_t GPSConfig::getSolution()
     {
         return m_gps.getCarrierSolutionType();
     }
+
+    bool GPSConfig::check_isBaseActivated()
+    {
+        is_base_activated = m_gps.svin.active;
+        return is_base_activated;
+    }
+
+    float GPSConfig::meanAccuracy()
+    {
+        m_gps.getSurveyStatus(UBX_NAV_SVIN);
+        bool is_base_activated = m_gps.svin.active;
+        if(is_base_activated)
+        {
+            Serial.print("Base Status = Acitvated");
+            Serial.print(" --- Time Ellapsed = ");
+            Serial.print(m_gps.svin.observationTime);
+            Serial.print(" --- Mean 3D Accuracy = "); Serial.println(m_gps.svin.meanAccuracy);
+            if(m_gps.svin.valid)
+            { 
+                Serial.println(" --- Position = VALID");
+            }
+            else
+            {
+               Serial.println(" --- Position = NO VALID"); 
+            }
+            return m_gps.svin.meanAccuracy;
+        }
+        else
+        {
+            return 0;
+        }
+    } 
 }

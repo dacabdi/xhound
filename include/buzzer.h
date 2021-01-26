@@ -12,6 +12,12 @@ namespace GNSS_RTK_ROVER
 
         void buzzPowerOn();
         void buzzPowerOff();
+        void buzzFixedRTK();
+        void buzzFloatRTK();
+        void buzzBaseMode();
+        void buzzRoverMode();
+        void buzzBTConnected();
+        void buzzBTDisconnected();
 
         private:
         int m_buzzPin;
@@ -22,7 +28,7 @@ namespace GNSS_RTK_ROVER
         for(int i = 0; i < 5; i++)
         {
             digitalWrite(m_buzzPin, HIGH); 
-            delay(40); 
+            delay(30); 
             digitalWrite(m_buzzPin, LOW); 
             delay(60);
         }
@@ -36,6 +42,42 @@ namespace GNSS_RTK_ROVER
             delay(100); 
             digitalWrite(m_buzzPin, LOW); 
             delay(50);
+        }
+    }
+
+    inline void Buzzer::buzzBTConnected()
+    {
+        digitalWrite(m_buzzPin, HIGH); 
+        delay(50);
+        digitalWrite(m_buzzPin, LOW); 
+    }
+
+    inline void Buzzer::buzzBTDisconnected()
+    {
+        digitalWrite(m_buzzPin, HIGH); 
+        delay(250);
+        digitalWrite(m_buzzPin, LOW); 
+    }
+
+    inline void Buzzer::buzzBaseMode()
+    {
+        for(int i = 0; i < 2; i++)
+        {
+            digitalWrite(m_buzzPin, HIGH); 
+            delay(20); 
+            digitalWrite(m_buzzPin, LOW); 
+            delay(30);
+        }
+    }
+
+    inline void Buzzer::buzzRoverMode()
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            digitalWrite(m_buzzPin, HIGH); 
+            delay(20); 
+            digitalWrite(m_buzzPin, LOW); 
+            delay(30);
         }
     }
 }
