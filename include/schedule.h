@@ -3,11 +3,11 @@
 
 #include "Arduino.h"
 
-namespace GNSS_RTK_ROVER {
+namespace GNSS_RTK_ROVER 
+{
     class Schedule 
     {
         public:
-        Schedule();
         void AddEvent(unsigned long period, void (*callback)(void));
         void Update();
 

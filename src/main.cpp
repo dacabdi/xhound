@@ -2,6 +2,7 @@
 #undef max
 
 #include <functional>
+#include <map>
 #include <string> 
 #include <vector>
 
@@ -20,6 +21,7 @@
 #include "correction.h"
 #include "eavesdrop.h"
 #include "bitmaps.h"
+#include "battery_monitor.h"
 #include "schedule.h"
 
 #define MONITOR_SERIAL_BAUD 115200
@@ -49,7 +51,7 @@ byte ByteFromGNSS = 0;
 
 int checkBatteryFlag = 0;
 const int VoltageDivider =2;
-const float AREF = 3.3;
+const float aref = 3.3;
 int BatteryReading = 0;
 int BatteryActualLevel = 0;
 int BatteryLastLevel = 150;
@@ -305,6 +307,11 @@ void setup()
     pinMode(BTSTATEPIN, INPUT);
     pinMode(ROVERBASESWITCH, INPUT_PULLUP);
 
+    BatteryMonitor::setup(
+        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
+    
+        });
+
     display = new DisplaySSD1306(
         [&](){ // onConnected
             Serial.println("Display connected");
@@ -372,7 +379,7 @@ void setup()
             eavesdropper = &simple_eavesdropper;
         });
 
-    // Schedule BT Check State
+    schedule.AddEvent(4000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, checkBTState);
     schedule.AddEvent(2500, checkRoverBase);
     schedule.AddEvent(4000, checkBattery_BasePrecision);
