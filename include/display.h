@@ -10,16 +10,21 @@
 
 namespace GNSS_RTK_ROVER
 {
-    class DisplaySSD1306
+    class DisplaySSD1306 : public Canvas
     {
         public:
         DisplaySSD1306(std::function<void()> onConnected, std::function<void()> onTryingConnection);
         void initialize();
-        void printText(std::string text, int16_t x, int16_t y);
-        void printFloatVariable(std::float_t float_variable, int16_t x, int16_t y);
-        void printTextInRect(std::string text);
-        void printBitMap(std::int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h, int color);
-        void printFloat(std::float_t variable, int16_t x, int16_t y);
+        
+        Dimensions2D getDimensions() override;
+        void display() override;
+        void clear() override;
+        void printPixel(uint16_t x, uint16_t y) override;
+        void erasePixel(uint16_t x, uint16_t y) override;
+        void printText(std::string text, uint16_t x, uint16_t y) override;
+        void printFloatVariable(float_t float_variable, uint16_t x, uint16_t y) override;
+        void printTextInRect(std::string text) override;
+        void printBitMap(uint16_t x, uint16_t y, const uint8_t bitmap[], uint16_t w, uint16_t h) override;
         private:
         void connect();
 

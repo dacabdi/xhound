@@ -1,10 +1,10 @@
 #undef min
 #undef max
 
+#include <vector>
 #include <functional>
 #include <map>
 #include <string> 
-#include <vector>
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -15,6 +15,7 @@
 
 #include "power_control.h"
 #include "buzzer.h"
+#include "graphics.h"
 #include "display.h"
 #include "gps_config.h"
 #include "eulerAngl.h"
