@@ -24,6 +24,7 @@
 #include "bitmaps.h"
 #include "battery_monitor.h"
 #include "schedule.h"
+#include "views.h"
 
 #define MONITOR_SERIAL_BAUD 115200
 #define EAVESDROP_SERIAL_BAUD 115200
@@ -41,12 +42,16 @@ PeriferalPowerController gps_bt_dp_power(POWERPIN);
 Buzzer buzzer(BUZZERPIN);
 DisplaySSD1306* display;
 
+LogoView logoView(*display, Vector2D{0, 0});
+BatteryView batteryView(*display, Vector2D{106, 0});
+BTStatusView btStatusView(*display, Vector2D{84, 0});
+DivisionLineView divisionLineView(*display, Vector2D{80, 0});
+RoverStatusView roverStatusView(*display, Vector2D{0, 2});
+
 Schedule schedule;
 
 GPSConfig* gpsConfig;
-Eavesdropper* eavesdropper;
-SimpleEavesdropper simple_eavesdropper(Serial1);
-UBXEavesdropper ubx_eavesdropper(Serial1);
+
 
 byte ByteFromGNSS = 0;
 
@@ -73,143 +78,143 @@ int ObservationTime = 0;
 boolean svin_valid = 0;
 
 
-void ROVERBASESwitch()
-{
-    detachInterrupt(ROVERBASESWITCH);
+// void ROVERBASESwitch()
+// {
+//     detachInterrupt(ROVERBASESWITCH);
 
-    if(RoverBaseModeFlag == false)
-    {
-        Serial.println("Going into BASE MODE");
-    }
-    else
-    {
-        Serial.println("Going into ROVER MODE");
-    }
-    RoverBaseModeFlag = !RoverBaseModeFlag;
-}
+//     if(RoverBaseModeFlag == false)
+//     {
+//         Serial.println("Going into BASE MODE");
+//     }
+//     else
+//     {
+//         Serial.println("Going into ROVER MODE");
+//     }
+//     RoverBaseModeFlag = !RoverBaseModeFlag;
+// }
 
-void BridgeDataGNSStoBT()
-{   
-    while(Serial1.available())
-    {
-        ByteFromGNSS = Serial1.read();
-        Serial1.write(ByteFromGNSS);
-    }
-}
+// void BridgeDataGNSStoBT()
+// {   
+//     while(Serial1.available())
+//     {
+//         ByteFromGNSS = Serial1.read();
+//         Serial1.write(ByteFromGNSS);
+//     }
+// }
 
-void monitorPrintBattery()
-{
-    Serial.print("Battery Reading = ");
-    Serial.print(BatteryReading);
-    Serial.print(" --- ");
-    Serial.print("Battery Voltage = ");
-    Serial.print(BatteryVoltage);
-    Serial.print(" V");
-    Serial.print(" --- ");
-    Serial.print("Battery Level = ");
-    Serial.print(BatteryActualLevel);
-    Serial.println(" % ");
-}
+// void monitorPrintBattery()
+// {
+//     Serial.print("Battery Reading = ");
+//     Serial.print(BatteryReading);
+//     Serial.print(" --- ");
+//     Serial.print("Battery Voltage = ");
+//     Serial.print(BatteryVoltage);
+//     Serial.print(" V");
+//     Serial.print(" --- ");
+//     Serial.print("Battery Level = ");
+//     Serial.print(BatteryActualLevel);
+//     Serial.println(" % ");
+// }
 
-void checkBattery_BasePrecision()
-{    
-    BatteryReading = analogRead(BATTERYPIN);
-    BatteryVoltage = (VoltageDivider * AREF * BatteryReading) / 1023;
+// void checkBattery_BasePrecision()
+// {    
+//     BatteryReading = analogRead(BATTERYPIN);
+//     BatteryVoltage = (VoltageDivider * AREF * BatteryReading) / 1023;
 
-    if(!RoverBaseModeFlag)
-    {
-        //Serial.print("RoverBaseModeFlag = "); Serial.println(RoverBaseModeFlag);
-        display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-        display->printBitMap(10, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-        display->printText("VBat = ", 3, 25);
-        display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-        display->printFloatVariable(BatteryVoltage, 45, 25);
-    }
-    else
-    {
-        //Serial.print("RoverBaseModeFlag = "); Serial.println(RoverBaseModeFlag);
-        display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-        display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//     if(!RoverBaseModeFlag)
+//     {
+//         //Serial.print("RoverBaseModeFlag = "); Serial.println(RoverBaseModeFlag);
+//         display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//         display->printBitMap(10, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//         display->printText("VBat = ", 3, 25);
+//         display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//         display->printFloatVariable(BatteryVoltage, 45, 25);
+//     }
+//     else
+//     {
+//         //Serial.print("RoverBaseModeFlag = "); Serial.println(RoverBaseModeFlag);
+//         display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//         display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
         
-        mean_Accuracy = gpsConfig->meanAccuracy();
-        if(mean_Accuracy > 10)
-        {
-            mean_Accuracy = 9.99;
-            display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-            display->printBitMap(10, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-            display->printText("Accu > ", 3, 25);
-            display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-            display->printFloatVariable(mean_Accuracy, 46, 25);
-        }
-        else
-        {
-            display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-            display->printBitMap(10, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-            display->printText("Accu = ", 3, 25);
-            display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
-            display->printFloatVariable(mean_Accuracy, 46, 25);
-        }
+//         mean_Accuracy = gpsConfig->meanAccuracy();
+//         if(mean_Accuracy > 10)
+//         {
+//             mean_Accuracy = 9.99;
+//             display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//             display->printBitMap(10, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//             display->printText("Accu > ", 3, 25);
+//             display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//             display->printFloatVariable(mean_Accuracy, 46, 25);
+//         }
+//         else
+//         {
+//             display->printBitMap(3, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//             display->printBitMap(10, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//             display->printText("Accu = ", 3, 25);
+//             display->printBitMap(45, 25, clear_float_variable, 28, 8, BLACK); //This is to clear the area.
+//             display->printFloatVariable(mean_Accuracy, 46, 25);
+//         }
         
-    }
+//     }
     
-    //monitorPrintBattery();
+//     //monitorPrintBattery();
 
-    if(BatteryVoltage >= 4)
-    {
-        BatteryActualLevel = 100;
-        if(BatteryLastLevel != BatteryActualLevel)
-        {
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_100, 21, 32, WHITE);
-            monitorPrintBattery();
-        }
-    }
+//     if(BatteryVoltage >= 4)
+//     {
+//         BatteryActualLevel = 100;
+//         if(BatteryLastLevel != BatteryActualLevel)
+//         {
+//             display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+//             display->printBitMap(106, 0, battery_100, 21, 32, WHITE);
+//             monitorPrintBattery();
+//         }
+//     }
 
-    if(BatteryVoltage < 4 && BatteryVoltage >= 3.8)
-    {
-        BatteryActualLevel = 75;
-        if(BatteryLastLevel != BatteryActualLevel)
-        {
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_75, 21, 32, WHITE);
-            monitorPrintBattery();
-        }
-    }
+//     if(BatteryVoltage < 4 && BatteryVoltage >= 3.8)
+//     {
+//         BatteryActualLevel = 75;
+//         if(BatteryLastLevel != BatteryActualLevel)
+//         {
+//             display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+//             display->printBitMap(106, 0, battery_75, 21, 32, WHITE);
+//             monitorPrintBattery();
+//         }
+//     }
 
-    if(BatteryVoltage < 3.8 && BatteryVoltage >= 3.3)
-    {
-        BatteryActualLevel = 50;
-        if(BatteryLastLevel != BatteryActualLevel)
-        {
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_50, 21, 32, WHITE);
-            monitorPrintBattery();
-        }
-    }
+//     if(BatteryVoltage < 3.8 && BatteryVoltage >= 3.3)
+//     {
+//         BatteryActualLevel = 50;
+//         if(BatteryLastLevel != BatteryActualLevel)
+//         {
+//             display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+//             display->printBitMap(106, 0, battery_50, 21, 32, WHITE);
+//             monitorPrintBattery();
+//         }
+//     }
 
-    if(BatteryVoltage < 3.3 && BatteryVoltage >= 2.9)
-    {
-        BatteryActualLevel = 25;
-        if(BatteryLastLevel != BatteryActualLevel)
-        {
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_25, 21, 32, WHITE);
-            monitorPrintBattery();
-        }
-    }
+//     if(BatteryVoltage < 3.3 && BatteryVoltage >= 2.9)
+//     {
+//         BatteryActualLevel = 25;
+//         if(BatteryLastLevel != BatteryActualLevel)
+//         {
+//             display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+//             display->printBitMap(106, 0, battery_25, 21, 32, WHITE);
+//             monitorPrintBattery();
+//         }
+//     }
 
-    if(BatteryVoltage <= 2.7)
-    {
-        BatteryActualLevel = 0;
-        if(BatteryLastLevel != BatteryActualLevel)
-        {
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_0, 21, 32, WHITE);
-            monitorPrintBattery();
-        }
-    }
-    BatteryLastLevel = BatteryActualLevel;
-}
+//     if(BatteryVoltage <= 2.7)
+//     {
+//         BatteryActualLevel = 0;
+//         if(BatteryLastLevel != BatteryActualLevel)
+//         {
+//             display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
+//             display->printBitMap(106, 0, battery_0, 21, 32, WHITE);
+//             monitorPrintBattery();
+//         }
+//     }
+//     BatteryLastLevel = BatteryActualLevel;
+// }
 
 void checkBTState()
 {
@@ -221,43 +226,43 @@ void checkBTState()
         {
             Serial.println("BT Connected");
             buzzer.buzzBTConnected();
-            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(84, 0, bt_on, 21, 32, WHITE);
+            btStatusView.setStatus(true);            
         }
         else
         {
             Serial.println("BT disconnected, defaulting GNSS config");
             buzzer.buzzBTDisconnected();
-            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
+            btStatusView.setStatus(false);
             gpsConfig->initialize();
         }
         btConnectionLastState = btConnectionCurrentState;
     }
+    btStatusView.clear();
+    btStatusView.draw();
 }
 
-void checkRoverBase()
-{
-    Serial.print("Base Status is = ");
-    Serial.println(gpsConfig->check_isBaseActivated());
-    // if (RoverBaseModeFlag != RoverBaseModeFlagLast)
-    // {
-    //     if(RoverBaseModeFlag)
-    //     {
-    //         buzzer.buzzBaseMode();
-    //         gpsConfig->configureAsBase();
-    //     }
-    //     else
-    //     {
-    //         buzzer.buzzRoverMode();
-    //         gpsConfig->configureDisableBase();
-    //         display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
-    //         display->printBitMap(0, 2, rover_mode, 64, 15, WHITE);
-    //     }
-    //     RoverBaseModeFlagLast = RoverBaseModeFlag;
-    //     attachInterrupt(digitalPinToInterrupt(ROVERBASESWITCH), ROVERBASESwitch, RISING);
-    // }
-}
+// void checkRoverBase()
+// {
+//     Serial.print("Base Status is = ");
+//     Serial.println(gpsConfig->check_isBaseActivated());
+//     // if (RoverBaseModeFlag != RoverBaseModeFlagLast)
+//     // {
+//     //     if(RoverBaseModeFlag)
+//     //     {
+//     //         buzzer.buzzBaseMode();
+//     //         gpsConfig->configureAsBase();
+//     //     }
+//     //     else
+//     //     {
+//     //         buzzer.buzzRoverMode();
+//     //         gpsConfig->configureDisableBase();
+//     //         display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
+//     //         display->printBitMap(0, 2, rover_mode, 64, 15, WHITE);
+//     //     }
+//     //     RoverBaseModeFlagLast = RoverBaseModeFlag;
+//     //     attachInterrupt(digitalPinToInterrupt(ROVERBASESWITCH), ROVERBASESwitch, RISING);
+//     // }
+// }
 
 void checkAndDisplayCarrierSolutionandBaseRoverMode() 
 {
@@ -270,18 +275,15 @@ void checkAndDisplayCarrierSolutionandBaseRoverMode()
             switch(ActualCarrierSolution)
             {
                 case 0:
-                    display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
-                    display->printBitMap(0, 2, dgps, 64, 15, WHITE);
+                    roverStatusView.setStatus(RoverStatus::DGPS);
                     Serial.println("No Solution");
                     break;
                 case 1:
-                    display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
-                    display->printBitMap(0, 2, float_rtk, 64, 15, WHITE);
+                    roverStatusView.setStatus(RoverStatus::FloatRTK);
                     Serial.println("Float RTK");
                     break;
                 case 2:
-                    display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
-                    display->printBitMap(0, 2, fixed_rtk, 64, 15, WHITE);
+                    roverStatusView.setStatus(RoverStatus::FixedRTK);
                     Serial.println("Fix RTK");
                     break;
             }
@@ -290,28 +292,24 @@ void checkAndDisplayCarrierSolutionandBaseRoverMode()
     }
     else
     {
-        display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
-        display->printBitMap(0, 2, base_mode, 64, 15, WHITE);
+        // display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
+        // display->printBitMap(0, 2, base_mode, 64, 15, WHITE);
     }  
+    roverStatusView.clear();
+    roverStatusView.draw();
 }
 
 void setup()
 {
-	//Wire.setClock(400000);
+    // I2C and UART 
     Wire.begin();
 	Serial.begin(MONITOR_SERIAL_BAUD);
-	Serial1.begin(EAVESDROP_SERIAL_BAUD);
 	delay(2000);
-
 	Serial.println("UARTS & I2C Initialized...");
 
-    pinMode(BTSTATEPIN, INPUT);
-    pinMode(ROVERBASESWITCH, INPUT_PULLUP);
-
-    BatteryMonitor::setup(
-        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
-    
-        });
+    // Pin Modes
+    //pinMode(BTSTATEPIN, INPUT);
+    //pinMode(ROVERBASESWITCH, INPUT_PULLUP);
 
     display = new DisplaySSD1306(
         [&](){ // onConnected
@@ -319,6 +317,12 @@ void setup()
         },
         [&](){ // onTryingConnection
             Serial.println("Display not connected. Trying...");
+        });
+
+    BatteryMonitor::setup(
+        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
+            batteryView.setPercentage(percentage);
+            batteryView.draw();
         });
 
     Serial.println("Setting up power control");
@@ -332,19 +336,19 @@ void setup()
             display->initialize();
             gpsConfig->initialize();
 
-            display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-            display->printBitMap(0, 0, logo_128x32, 128, 32, WHITE);
+            logoView.clear();
+            logoView.draw();
             delay(5000);
+
+            logoView.clear();
             display->printTextInRect("Waking Up ...");
             Serial.println("Waking Up ...");
             checkBTState();
-            display->printBitMap(80, 0, division_line_v, 1, 32, WHITE);
-            display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
-            display->printBitMap(106, 0, battery_unknown, 21, 32, WHITE);
-            display->printBitMap(0, 2, clear_icon_big, 64, 15, BLACK);
-            display->printBitMap(0, 2, rover_mode, 64, 15, WHITE);
-            Serial.println("Attaching Interrupt for the ROVER-BASE Switch");
-            attachInterrupt(digitalPinToInterrupt(ROVERBASESWITCH), ROVERBASESwitch, FALLING);
+            divisionLineView.draw();
+            batteryView.draw();
+            roverStatusView.draw();
+            // Serial.println("Attaching Interrupt for the ROVER-BASE Switch");
+            // attachInterrupt(digitalPinToInterrupt(ROVERBASESWITCH), ROVERBASESwitch, FALLING);
         },
         [&](){ // onSleep
             Serial.println("Detaching Interrupt for the ROVER-BASE Switch");
@@ -372,18 +376,16 @@ void setup()
         },
         [&](){ // onNMEA
             Serial.println("Using NMEA");
-            eavesdropper = &simple_eavesdropper;
         },
         [&](){ // onUBX
             Serial.println("Using UBX");
             // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
-            eavesdropper = &simple_eavesdropper;
         });
 
     schedule.AddEvent(4000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, checkBTState);
-    schedule.AddEvent(2500, checkRoverBase);
-    schedule.AddEvent(4000, checkBattery_BasePrecision);
+    // schedule.AddEvent(2500, checkRoverBase);
+    // schedule.AddEvent(4000, checkBattery_BasePrecision);
     schedule.AddEvent(5000, checkAndDisplayCarrierSolutionandBaseRoverMode);
         
     Serial.println("Finished Setup");
@@ -394,7 +396,7 @@ void loop()
 {
     CPUPowerController::checkForSleep();
     schedule.Update();
-    BridgeDataGNSStoBT(); //Without eavesdropper.
+    //BridgeDataGNSStoBT(); //Without eavesdropper.
     //gpsConfig->factoryReset();
     //gpsConfig->checkForStatus();
 	//eavesdropper->eavesdrop(); //This eavesdropper needs to be fixed.

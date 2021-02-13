@@ -7,7 +7,7 @@ namespace GNSS_RTK_ROVER
 {
     uint8_t BatteryMonitor::percentage;
 	float_t BatteryMonitor::voltage;
-	uint8_t BatteryMonitor::batteryPin;
+	uint8_t BatteryMonitor::batteryPin = BATTERYPIN;
 	std::map<uint16_t, uint8_t> BatteryMonitor::voltToPercMap;
 	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
 
