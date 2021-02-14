@@ -32,6 +32,7 @@
 #define BATTERYPIN A1
 #define BTSTATEPIN 0
 #define ONOFFPIN 1
+#define CHARGINGPIN 8
 #define POWERPIN 2
 #define BUZZERPIN 3
 #define ROVERBASESWITCH 4
@@ -308,93 +309,105 @@ void setup()
 	Serial.println("UARTS & I2C Initialized...");
 
     // Pin Modes
+    pinMode(CHARGINGPIN, INPUT);
+    pinMode(2, OUTPUT);
+    pinMode(5, OUTPUT);
     //pinMode(BTSTATEPIN, INPUT);
     //pinMode(ROVERBASESWITCH, INPUT_PULLUP);
 
-    display = new DisplaySSD1306(
-        [&](){ // onConnected
-            Serial.println("Display connected");
-        },
-        [&](){ // onTryingConnection
-            Serial.println("Display not connected. Trying...");
-        });
+    // display = new DisplaySSD1306(
+    //     [&](){ // onConnected
+    //         Serial.println("Display connected");
+    //     },
+    //     [&](){ // onTryingConnection
+    //         Serial.println("Display not connected. Trying...");
+    //     });
 
-    BatteryMonitor::setup(
-        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
-            batteryView.setPercentage(percentage);
-            batteryView.draw();
-        });
+    // BatteryMonitor::setup(
+    //     [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
+    //         batteryView.setPercentage(percentage);
+    //         batteryView.draw();
+    //     });
 
     Serial.println("Setting up power control");
-    CPUPowerController::setup(ONOFFPIN,
-        [&](){ // onWake
-            buzzer.buzzPowerOn();
-            // Turn on periferics
-            gps_bt_dp_power.turnOn();
-            delay(2000);
-            // Reinitialize periferics
-            display->initialize();
-            gpsConfig->initialize();
+    CPUPowerController::setup(ONOFFPIN, CHARGINGPIN,
+        [&](bool onOffState){ // onTurnOnOff
+            if(onOffState)
+            {
+                Serial.println("Turned On");
+                analogWrite(2, 10);
+            }
+            else
+            {
+                analogWrite(2, 0);                
+            }   
+        },
+        [&](bool chargingState){
+            if(chargingState) 
+            {
+                analogWrite(5, 255);
+            }
+            else
+            {
+                analogWrite(5, 0);
+            }
+        });
 
-            logoView.clear();
-            logoView.draw();
-            delay(5000);
+            // buzzer.buzzPowerOn();
+            // // Turn on periferics
+            // gps_bt_dp_power.turnOn();
+            // delay(2000);
+            // // Reinitialize periferics
+            // display->initialize();
+            // gpsConfig->initialize();
 
-            logoView.clear();
-            display->printTextInRect("Waking Up ...");
-            Serial.println("Waking Up ...");
-            checkBTState();
-            divisionLineView.draw();
-            batteryView.draw();
-            roverStatusView.draw();
+            // logoView.clear();
+            // logoView.draw();
+            // delay(5000);
+
+            // logoView.clear();
+            // display->printTextInRect("Waking Up ...");
+            // Serial.println("Waking Up ...");
+            // checkBTState();
+            // divisionLineView.draw();
+            // batteryView.draw();
+            // roverStatusView.draw();
             // Serial.println("Attaching Interrupt for the ROVER-BASE Switch");
             // attachInterrupt(digitalPinToInterrupt(ROVERBASESWITCH), ROVERBASESwitch, FALLING);
-        },
-        [&](){ // onSleep
-            Serial.println("Detaching Interrupt for the ROVER-BASE Switch");
-            detachInterrupt(ROVERBASESWITCH);
-            buzzer.buzzPowerOff();
-            Serial.println("Turning Off ...");
-            display->printTextInRect("Turning Off ...");
-            delay(2000);
-            gps_bt_dp_power.turnOff();
-            btConnectionLastState = false;
-            BatteryLastLevel = 150;
-            LastCarrierSolution = 150;
-        });
 
-    Serial.println("Setting up GPS config");
-    gpsConfig = new GPSConfig(EAVESDROP_SERIAL_BAUD,
-        [](){ // onConnected
-            Serial.println("Ublox GNSS connected");
-        },
-        [](){ // onTryingConnection
-            Serial.println("Ublox GNSS not connected. Trying...");
-        },
-        [](){ // onReset
-            Serial.println("Ublox GNSS Reseted");
-        },
-        [&](){ // onNMEA
-            Serial.println("Using NMEA");
-        },
-        [&](){ // onUBX
-            Serial.println("Using UBX");
-            // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
-        });
+    // Serial.println("Setting up GPS config");
+    // gpsConfig = new GPSConfig(EAVESDROP_SERIAL_BAUD,
+    //     [](){ // onConnected
+    //         Serial.println("Ublox GNSS connected");
+    //     },
+    //     [](){ // onTryingConnection
+    //         Serial.println("Ublox GNSS not connected. Trying...");
+    //     },
+    //     [](){ // onReset
+    //         Serial.println("Ublox GNSS Reseted");
+    //     },
+    //     [&](){ // onNMEA
+    //         Serial.println("Using NMEA");
+    //     },
+    //     [&](){ // onUBX
+    //         Serial.println("Using UBX");
+    //         // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
+    //     });
 
-    schedule.AddEvent(4000, BatteryMonitor::checkStatus);
-    schedule.AddEvent(1000, checkBTState);
+    // schedule.AddEvent(4000, BatteryMonitor::checkStatus);
+    // schedule.AddEvent(1000, checkBTState);
     // schedule.AddEvent(2500, checkRoverBase);
     // schedule.AddEvent(4000, checkBattery_BasePrecision);
-    schedule.AddEvent(5000, checkAndDisplayCarrierSolutionandBaseRoverMode);
-        
+    // schedule.AddEvent(5000, checkAndDisplayCarrierSolutionandBaseRoverMode);
+    schedule.AddEvent(1000, CPUPowerController::checkCharging);
+
     Serial.println("Finished Setup");
 	delay(2000);
 }
 
 void loop()
 {
-    CPUPowerController::checkForSleep();
+    //CPUPowerController::checkForSleep();
     schedule.Update();
     //BridgeDataGNSStoBT(); //Without eavesdropper.
     //gpsConfig->factoryReset();
