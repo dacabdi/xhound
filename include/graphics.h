@@ -34,7 +34,7 @@ namespace GNSS_RTK_ROVER
     class Component
     {
         public:
-        Component(Canvas& can, Vector2D pos, Dimensions2D dim);
+        Component(Canvas* can, Vector2D pos, Dimensions2D dim);
         virtual void draw() = 0;
         void clear();
         
@@ -44,14 +44,14 @@ namespace GNSS_RTK_ROVER
         void setDimensions(Dimensions2D dim);
 
         protected:
-        Canvas& canvas;
+        Canvas* canvas;
         Vector2D position;
         Dimensions2D dimensions;
     };
 
     class CompositeComponent : Component
     {
-        CompositeComponent(Canvas& can, Vector2D pos, Dimensions2D dim) : Component(can, pos, dim) {}
+        CompositeComponent(Canvas* can, Vector2D pos, Dimensions2D dim) : Component(can, pos, dim) {}
         void draw() override;
         void embed(Component* component);
 

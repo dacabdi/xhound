@@ -5,7 +5,7 @@
 
 namespace GNSS_RTK_ROVER
 {
-    Component::Component(Canvas& can, Vector2D pos, Dimensions2D dim) : canvas(can), position(pos), dimensions(dim) {}
+    Component::Component(Canvas* can, Vector2D pos, Dimensions2D dim) : canvas(can), position(pos), dimensions(dim) {}
 
     void Component::clear()
     {
@@ -13,7 +13,7 @@ namespace GNSS_RTK_ROVER
         {
             for(auto j = 0; j < this->dimensions.width; j++)
             {
-                this->canvas.erasePixel(i + this->position.y, j + this->position.x);
+                this->canvas->erasePixel(i + this->position.y, j + this->position.x);
             }
         }
     }

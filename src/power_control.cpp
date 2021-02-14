@@ -9,6 +9,7 @@ namespace GNSS_RTK_ROVER
     bool CPUPowerController::onOffState;
     int CPUPowerController::chargingStatePin;
     bool CPUPowerController::chargingState;
+    bool CPUPowerController::justChangedOnOff;
     uint64_t CPUPowerController::powerSwitchLastPressed;
     std::function<void(bool)> CPUPowerController::onTurnOnOff;
     std::function<void(bool)> CPUPowerController::onChargingChanged;
@@ -20,6 +21,7 @@ namespace GNSS_RTK_ROVER
         chargingStatePin = _chargingStatePin;
         onTurnOnOff = _onTurnOnOff;
         onChargingChanged = _onChargingChanged;
+        justChangedOnOff = false;
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
 
         if(!isCharging())
@@ -46,13 +48,29 @@ namespace GNSS_RTK_ROVER
         {
             if(now - powerSwitchLastPressed <= 1000)
             {
-                turnOff();
+                justChangedOnOff = true;
             }
             powerSwitchLastPressed = now;
         }
         else
         {
-            turnOn();
+            justChangedOnOff = true;
+        }
+    }
+
+    void CPUPowerController::checkOnOffStatus()
+    {
+        if(justChangedOnOff)
+        {
+            if(onOffState)
+            {
+                turnOff();
+            }
+            else
+            {
+                turnOn();
+            }
+            justChangedOnOff = false;
         }
     }
 

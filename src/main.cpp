@@ -30,24 +30,24 @@
 #define EAVESDROP_SERIAL_BAUD 115200
 
 #define BATTERYPIN A1
-#define BTSTATEPIN 0
+//#define BTSTATEPIN 0
 #define ONOFFPIN 1
 #define CHARGINGPIN 8
-#define POWERPIN 2
+#define PERIFERALSPOWERPIN 0
 #define BUZZERPIN 3
 #define ROVERBASESWITCH 4
 
 using namespace GNSS_RTK_ROVER;
 
-PeriferalPowerController gps_bt_dp_power(POWERPIN);
+PeriferalPowerController gps_bt_dp_power(PERIFERALSPOWERPIN);
 Buzzer buzzer(BUZZERPIN);
 DisplaySSD1306* display;
 
-LogoView logoView(*display, Vector2D{0, 0});
-BatteryView batteryView(*display, Vector2D{106, 0});
-BTStatusView btStatusView(*display, Vector2D{84, 0});
-DivisionLineView divisionLineView(*display, Vector2D{80, 0});
-RoverStatusView roverStatusView(*display, Vector2D{0, 2});
+LogoView logoView(display, Vector2D{0, 0});
+BatteryView batteryView(display, Vector2D{106, 0});
+BTStatusView btStatusView(display, Vector2D{84, 0});
+DivisionLineView divisionLineView(display, Vector2D{80, 0});
+RoverStatusView roverStatusView(display, Vector2D{0, 2});
 
 Schedule schedule;
 
@@ -217,30 +217,30 @@ boolean svin_valid = 0;
 //     BatteryLastLevel = BatteryActualLevel;
 // }
 
-void checkBTState()
-{
-    bool btConnectionCurrentState = digitalRead(BTSTATEPIN);
+// void checkBTState()
+// {
+//     bool btConnectionCurrentState = digitalRead(BTSTATEPIN);
 
-    if(btConnectionCurrentState != btConnectionLastState)
-    {
-        if(btConnectionCurrentState)
-        {
-            Serial.println("BT Connected");
-            buzzer.buzzBTConnected();
-            btStatusView.setStatus(true);            
-        }
-        else
-        {
-            Serial.println("BT disconnected, defaulting GNSS config");
-            buzzer.buzzBTDisconnected();
-            btStatusView.setStatus(false);
-            gpsConfig->initialize();
-        }
-        btConnectionLastState = btConnectionCurrentState;
-    }
-    btStatusView.clear();
-    btStatusView.draw();
-}
+//     if(btConnectionCurrentState != btConnectionLastState)
+//     {
+//         if(btConnectionCurrentState)
+//         {
+//             Serial.println("BT Connected");
+//             buzzer.buzzBTConnected();
+//             btStatusView.setStatus(true);            
+//         }
+//         else
+//         {
+//             Serial.println("BT disconnected, defaulting GNSS config");
+//             buzzer.buzzBTDisconnected();
+//             btStatusView.setStatus(false);
+//             gpsConfig->initialize();
+//         }
+//         btConnectionLastState = btConnectionCurrentState;
+//     }
+//     btStatusView.clear();
+//     btStatusView.draw();
+// }
 
 // void checkRoverBase()
 // {
@@ -300,6 +300,44 @@ void checkAndDisplayCarrierSolutionandBaseRoverMode()
     roverStatusView.draw();
 }
 
+void start()
+{
+    Serial.println("entered start");
+    buzzer.buzzPowerOn();
+    // Turn on periferics
+    gps_bt_dp_power.turnOn();
+    delay(2000);
+    // Reinitialize periferics
+    display->initialize();
+    gpsConfig->initialize();
+
+    //logoView.clear();
+    //logoView.draw();
+    //delay(5000);
+    //logoView.clear();
+
+    // display->printTextInRect("Waking Up ...");
+    // Serial.println("Waking Up ...");
+    // //checkBTState();
+    // display->clear();
+
+    //divisionLineView.draw();
+    //batteryView.draw();
+    //roverStatusView.draw();
+    Serial.println("finished start");
+}
+
+void stop()
+{
+    buzzer.buzzPowerOff();
+    // Turn on periferics
+    gps_bt_dp_power.turnOff();
+    delay(2000);
+
+    display->clear();
+    display->display();
+}
+
 void setup()
 {
     // I2C and UART 
@@ -310,24 +348,46 @@ void setup()
 
     // Pin Modes
     pinMode(CHARGINGPIN, INPUT);
-    pinMode(2, OUTPUT);
+    pinMode(2, OUTPUT); // TODO: Make LED controller class
     pinMode(5, OUTPUT);
+
     //pinMode(BTSTATEPIN, INPUT);
     //pinMode(ROVERBASESWITCH, INPUT_PULLUP);
 
-    // display = new DisplaySSD1306(
-    //     [&](){ // onConnected
-    //         Serial.println("Display connected");
-    //     },
-    //     [&](){ // onTryingConnection
-    //         Serial.println("Display not connected. Trying...");
-    //     });
+    display = new DisplaySSD1306(
+        [&](){ // onConnected
+            Serial.println("Display connected");
+        },
+        [&](){ // onTryingConnection
+            Serial.println("Display not connected. Trying...");
+        });
+
+    //batteryView.draw();
 
     // BatteryMonitor::setup(
     //     [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
     //         batteryView.setPercentage(percentage);
     //         batteryView.draw();
     //     });
+
+    Serial.println("Setting up GPS config");
+    gpsConfig = new GPSConfig(EAVESDROP_SERIAL_BAUD,
+        [](){ // onConnected
+            Serial.println("Ublox GNSS connected");
+        },
+        [](){ // onTryingConnection
+            Serial.println("Ublox GNSS not connected. Trying...");
+        },
+        [](){ // onReset
+            Serial.println("Ublox GNSS Reseted");
+        },
+        [&](){ // onNMEA
+            Serial.println("Using NMEA");
+        },
+        [&](){ // onUBX
+            Serial.println("Using UBX");
+            // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
+        });
 
     Serial.println("Setting up power control");
     CPUPowerController::setup(ONOFFPIN, CHARGINGPIN,
@@ -336,10 +396,12 @@ void setup()
             {
                 Serial.println("Turned On");
                 analogWrite(2, 10);
+                start();
             }
             else
             {
-                analogWrite(2, 0);                
+                analogWrite(2, 0);
+                stop();        
             }   
         },
         [&](bool chargingState){
@@ -375,30 +437,12 @@ void setup()
             // Serial.println("Attaching Interrupt for the ROVER-BASE Switch");
             // attachInterrupt(digitalPinToInterrupt(ROVERBASESWITCH), ROVERBASESwitch, FALLING);
 
-    // Serial.println("Setting up GPS config");
-    // gpsConfig = new GPSConfig(EAVESDROP_SERIAL_BAUD,
-    //     [](){ // onConnected
-    //         Serial.println("Ublox GNSS connected");
-    //     },
-    //     [](){ // onTryingConnection
-    //         Serial.println("Ublox GNSS not connected. Trying...");
-    //     },
-    //     [](){ // onReset
-    //         Serial.println("Ublox GNSS Reseted");
-    //     },
-    //     [&](){ // onNMEA
-    //         Serial.println("Using NMEA");
-    //     },
-    //     [&](){ // onUBX
-    //         Serial.println("Using UBX");
-    //         // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
-    //     });
-
     // schedule.AddEvent(4000, BatteryMonitor::checkStatus);
     // schedule.AddEvent(1000, checkBTState);
     // schedule.AddEvent(2500, checkRoverBase);
     // schedule.AddEvent(4000, checkBattery_BasePrecision);
     // schedule.AddEvent(5000, checkAndDisplayCarrierSolutionandBaseRoverMode);
+    schedule.AddEvent(1000, CPUPowerController::checkOnOffStatus);
     schedule.AddEvent(1000, CPUPowerController::checkCharging);
 
     Serial.println("Finished Setup");
