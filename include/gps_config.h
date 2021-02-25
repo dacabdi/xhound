@@ -14,7 +14,11 @@ namespace GNSS_RTK_ROVER
         void factoryReset();
         void checkForStatus();
         void configureForNMEA();
+        void configureAsBase();
+        void configureDisableBase();
         uint8_t getSolution();
+        float meanAccuracy();
+        bool check_isBaseActivated();
 
         private:
         void connect();
@@ -24,7 +28,8 @@ namespace GNSS_RTK_ROVER
         void disableUBXNavMsgs();
         void disableUBXRxmMsgs();
         void configureForUBX();
-        
+        void configureAntenna();
+                
         SFE_UBLOX_GPS m_gps;
         int m_serialBaud;
         bool m_usingUBX;

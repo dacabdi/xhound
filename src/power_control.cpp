@@ -5,43 +5,111 @@
 
 namespace GNSS_RTK_ROVER
 {
-    volatile bool CPUPowerController::m_gotosleep;
-    int CPUPowerController::m_onOffPin;
-    std::function<void()> CPUPowerController::m_onWake;
-    std::function<void()> CPUPowerController::m_onSleep;
+    int CPUPowerController::onOffPin;
+    bool CPUPowerController::onOffState;
+    int CPUPowerController::chargingStatePin;
+    bool CPUPowerController::chargingState;
+    bool CPUPowerController::justChangedOnOff;
+    uint64_t CPUPowerController::powerSwitchLastPressed;
+    std::function<void(bool)> CPUPowerController::onTurnOnOff;
+    std::function<void(bool)> CPUPowerController::onChargingChanged;
 
-    void CPUPowerController::setup(int onOffPin, std::function<void()> onWake, std::function<void()> onSleep)
+    void CPUPowerController::setup(int _onOffPin, int _chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged)
     {
-        m_onOffPin = onOffPin;
-        m_gotosleep = true;
-        m_onWake = onWake;
-        m_onSleep = onSleep;
+        onOffPin = _onOffPin;
+        chargingStatePin = _chargingStatePin;
+        pinMode(chargingStatePin, INPUT);
 
-        pinMode(m_onOffPin, INPUT_PULLUP);
-        LowPower.attachInterruptWakeup(digitalPinToInterrupt(m_onOffPin), changeState, FALLING);
-    }
+        onOffState = false;
+        chargingState = false;
+        onTurnOnOff = _onTurnOnOff;
+        onChargingChanged = _onChargingChanged;
+        justChangedOnOff = false;
+        attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
 
-    void CPUPowerController::checkForSleep()
-    {
-        if(m_gotosleep)
+        if(!isCharging())
         {
-            m_onSleep();
-            LowPower.sleep();
-            m_onWake();
+            turnOn();
         }
     }
 
-    void CPUPowerController::changeState()
+    void CPUPowerController::onOffSwitcher()
     {
-        m_gotosleep = !m_gotosleep;
+        auto now = millis();
+        if(now - powerSwitchLastPressed <= 100) // Debouncer
+            return;
+        
+        Serial.println("OnOff Switch Pressed");
+        if(onOffState)
+        {
+            if(now - powerSwitchLastPressed <= 1000)
+            {
+                justChangedOnOff = true;
+            }
+            powerSwitchLastPressed = now;
+        }
+        else
+        {
+            justChangedOnOff = true;
+        }
     }
 
-    void PeriferalPowerController::turnOn()
+    void CPUPowerController::checkOnOffStatus()
+    {
+        if(justChangedOnOff)
+        {
+            if(onOffState)
+            {
+                turnOff();
+            }
+            else
+            {
+                turnOn();
+            }
+            justChangedOnOff = false;
+        }
+    }
+
+    void CPUPowerController::turnOn()
+    {
+        onOffState = true;
+        onTurnOnOff(onOffState);
+    }
+
+    void CPUPowerController::turnOff()
+    {
+        onOffState = false;
+        onTurnOnOff(onOffState);
+    }
+
+    bool CPUPowerController::isCharging()
+    {
+        return digitalRead(chargingStatePin);
+    }
+
+    void CPUPowerController::checkCharging()
+    {
+        auto currState = isCharging();
+        if(currState != chargingState)
+        {
+            chargingState = currState;
+            onChargingChanged(chargingState);
+        }    
+    }
+
+    void PeripheralPowerController::setup(int powerPin, PinStatus defaultState) 
+    { 
+        m_powerPin = powerPin;
+        pinMode(m_powerPin, OUTPUT);
+        digitalWrite(m_powerPin, defaultState);
+    }
+
+    void PeripheralPowerController::turnOn()
     {
         digitalWrite(m_powerPin, LOW);
     }
 
-    void PeriferalPowerController::turnOff()
+    void PeripheralPowerController::turnOff()
     {
         digitalWrite(m_powerPin, HIGH);
     }
