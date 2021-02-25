@@ -24,6 +24,7 @@
 #include "eavesdrop.h"
 #include "bitmaps.h"
 #include "battery_monitor.h"
+#include "bluetooth_monitor.h"
 #include "schedule.h"
 #include "views.h"
 
@@ -40,8 +41,8 @@
 #define SPARE_RIGHT 2
 #define EXTERNALPOWERLED 3
 
-
 #define BUZZERPIN A0
+#define BLUETOOTHPIN 7
 
 using namespace GNSS_RTK_ROVER;
 
@@ -53,6 +54,7 @@ Canvas* display;
 LogoView* logoView;
 DivisionLineView* divisionLineView;
 BatteryView* batteryView;
+BTStatusView* btStatusView;
 
 Schedule schedule;
 
@@ -75,6 +77,7 @@ void start()
     logoView = new LogoView(display, {0, 0});
     divisionLineView = new DivisionLineView(display, {80, 0});
     batteryView = new BatteryView(display, {106, 0});
+    btStatusView = new BTStatusView(display, {84, 0});
 
     BatteryMonitor::setup(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){
@@ -84,12 +87,26 @@ void start()
         });
     Serial.println("Finished setting up battery monitor");
 
+    BluetoothMonitor::setup(BLUETOOTHPIN,
+        [&](){ // onConnected
+            Serial.println("Bluetooth connected");
+            btStatusView->setStatus(true);
+            btStatusView->draw();
+        },
+        [&](){ // onDisconnected
+            Serial.println("Bluetooth disconnected");
+            btStatusView->setStatus(false);
+            btStatusView->draw();
+        });
+    Serial.println("Finished setting up bluetooth monitor");
+
     logoView->draw();
     delay(3000);
     logoView->clear();
 
     divisionLineView->draw();
     batteryView->draw();
+    btStatusView->draw();
 }
 
 void stop()
@@ -156,6 +173,7 @@ void setup()
     schedule.AddEvent(1000, CPUPowerController::checkOnOffStatus);
     schedule.AddEvent(1000, CPUPowerController::checkCharging);
     schedule.AddEvent(1000, BatteryMonitor::checkStatus);
+    schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
 
     Serial.println("Finished Setup");
 	delay(2000);

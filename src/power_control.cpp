@@ -89,9 +89,7 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::checkCharging()
     {
-        Serial.print("Checking external power...  ");
         auto currState = isCharging();
-        Serial.println(currState);
         if(currState != chargingState)
         {
             chargingState = currState;

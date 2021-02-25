@@ -22,6 +22,7 @@ namespace GNSS_RTK_ROVER
 		static uint8_t calculatePercentage();
 		static void initializeVoltToPercMap();
 
+		static bool initialized;
 		static uint8_t percentage;
 		static float_t voltage;
 		static int8_t batteryPin;

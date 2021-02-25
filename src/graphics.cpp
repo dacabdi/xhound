@@ -5,11 +5,6 @@
 
 namespace GNSS_RTK_ROVER
 {
-    void Canvas::whoAmI()
-    {
-        Serial.println("I am Canvas");
-    }
-
     Component::Component(Canvas* can, Vector2D pos, Dimensions2D dim) : canvas(can), position(pos), dimensions(dim) {}
 
     void Component::clear()

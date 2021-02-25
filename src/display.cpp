@@ -10,11 +10,6 @@
 
 namespace GNSS_RTK_ROVER 
 {
-    void DisplaySSD1306::whoAmI()
-    {
-        Serial.println("I am Display");
-    }
-
     DisplaySSD1306::DisplaySSD1306(std::function<void()> onConnected, std::function<void()> onTryingConnection)
         : m_onConnected(onConnected), m_onTryingConnection(onTryingConnection)
     {

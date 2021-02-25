@@ -5,14 +5,16 @@
 
 namespace GNSS_RTK_ROVER
 {
+    bool BatteryMonitor::initialized = false;
     uint8_t BatteryMonitor::percentage;
 	float_t BatteryMonitor::voltage;
-	int8_t BatteryMonitor::batteryPin = -1;
+	int8_t BatteryMonitor::batteryPin;
 	std::map<uint16_t, uint8_t> BatteryMonitor::voltToPercMap;
 	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
 
     void BatteryMonitor::setup(uint8_t p_batteryPin, std::function<void(float_t, uint8_t)> p_onPercentageChanged)
     { 
+        initialized = true;
         batteryPin = p_batteryPin;
         pinMode(batteryPin, INPUT);
 
@@ -21,11 +23,11 @@ namespace GNSS_RTK_ROVER
 
     void BatteryMonitor::checkStatus()
     {
-        if(batteryPin == -1) // Skip if not setup yet
+        if(!initialized) // Skip if not setup yet
             return;
 
         readAndCalculateVoltage();
-        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
+        //Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
         auto new_percentage = calculatePercentage();
         if(new_percentage != percentage)
         {

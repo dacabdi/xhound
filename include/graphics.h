@@ -30,8 +30,6 @@ namespace GNSS_RTK_ROVER
         virtual void printFloatVariable(std::float_t float_variable, uint16_t x, uint16_t y) = 0;
         virtual void printTextInRect(std::string text) = 0;
         virtual void printBitMap(uint16_t x, uint16_t y, const uint8_t bitmap[], uint16_t w, uint16_t h) = 0;
-        
-        virtual void whoAmI(); 
     };
 
     class Component

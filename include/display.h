@@ -26,8 +26,6 @@ namespace GNSS_RTK_ROVER
         void printTextInRect(std::string text) override;
         void printBitMap(uint16_t x, uint16_t y, const uint8_t bitmap[], uint16_t w, uint16_t h) override;
 
-        void whoAmI() override;
-
         private:
         void connect();
 
