@@ -10,6 +10,11 @@
 
 namespace GNSS_RTK_ROVER 
 {
+    void DisplaySSD1306::whoAmI()
+    {
+        Serial.println("I am Display");
+    }
+
     DisplaySSD1306::DisplaySSD1306(std::function<void()> onConnected, std::function<void()> onTryingConnection)
         : m_onConnected(onConnected), m_onTryingConnection(onTryingConnection)
     {
@@ -59,7 +64,7 @@ namespace GNSS_RTK_ROVER
     {
         m_display.setCursor(x, y);
         m_display.drawPixel(x, y, SSD1306_BLACK);
-        m_display.display();
+        //m_display.display();
     }
 
     // Only strings less than 16 chars in size

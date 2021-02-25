@@ -4,15 +4,15 @@
 #include "Arduino.h"
 
 #define BATTERYPIN A1
-#define VOLTAGEDIVIDER 2
-#define AREF 3.3
+#define VOLTAGEDIVIDER 1.3
+#define AREF 3.26
 
 namespace GNSS_RTK_ROVER
 {
 	class BatteryMonitor
 	{
 		public:
-		static void setup(std::function<void(float_t, uint8_t)> onPercentageChanged);
+		static void setup(uint8_t batteryPin, std::function<void(float_t, uint8_t)> onPercentageChanged);
 		static void checkStatus();
 		static float_t getVoltage();
 		static uint8_t getDiscretePercentage();
@@ -24,7 +24,7 @@ namespace GNSS_RTK_ROVER
 
 		static uint8_t percentage;
 		static float_t voltage;
-		static uint8_t batteryPin;
+		static int8_t batteryPin;
 		static std::map<uint16_t, uint8_t> voltToPercMap;
 		static std::function<void(float_t, uint8_t)> onPercentageChanged;
 	};

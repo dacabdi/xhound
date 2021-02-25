@@ -2,7 +2,7 @@
 	"folders": [
 		{
 			"name": "xhound",
-			"path": "."
+			"path": "../xhound-jcabdi-copy/xhound"
 		}
 	],
 	"settings": {

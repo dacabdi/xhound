@@ -20,6 +20,7 @@ namespace GNSS_RTK_ROVER
     class Canvas
     {
         public:
+        virtual ~Canvas() {};
         virtual Dimensions2D getDimensions() = 0;
         virtual void display() = 0;
         virtual void clear() = 0;
@@ -29,6 +30,8 @@ namespace GNSS_RTK_ROVER
         virtual void printFloatVariable(std::float_t float_variable, uint16_t x, uint16_t y) = 0;
         virtual void printTextInRect(std::string text) = 0;
         virtual void printBitMap(uint16_t x, uint16_t y, const uint8_t bitmap[], uint16_t w, uint16_t h) = 0;
+        
+        virtual void whoAmI(); 
     };
 
     class Component

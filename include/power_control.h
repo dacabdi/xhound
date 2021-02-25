@@ -30,11 +30,10 @@ namespace GNSS_RTK_ROVER
         static std::function<void(bool)> onChargingChanged;
     };
 
-    class PeriferalPowerController
+    class PeripheralPowerController
     {
       public:
-      PeriferalPowerController(int powerPin) : m_powerPin(powerPin) { pinMode(m_powerPin, OUTPUT); }
-
+	  void setup(int powerPin, PinStatus defaultState);
       void turnOn();
       void turnOff();
 

@@ -5,15 +5,20 @@
 
 namespace GNSS_RTK_ROVER
 {
+    void Canvas::whoAmI()
+    {
+        Serial.println("I am Canvas");
+    }
+
     Component::Component(Canvas* can, Vector2D pos, Dimensions2D dim) : canvas(can), position(pos), dimensions(dim) {}
 
     void Component::clear()
     {
-        for(auto i = 0; i < this->dimensions.height; i++)
+        for(auto i = 0; i < this->dimensions.width; i++)
         {
-            for(auto j = 0; j < this->dimensions.width; j++)
+            for(auto j = 0; j < this->dimensions.height; j++)
             {
-                this->canvas->erasePixel(i + this->position.y, j + this->position.x);
+                this->canvas->erasePixel(i + this->position.x, j + this->position.y);
             }
         }
     }

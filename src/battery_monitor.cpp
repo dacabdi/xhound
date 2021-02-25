@@ -7,19 +7,25 @@ namespace GNSS_RTK_ROVER
 {
     uint8_t BatteryMonitor::percentage;
 	float_t BatteryMonitor::voltage;
-	uint8_t BatteryMonitor::batteryPin = BATTERYPIN;
+	int8_t BatteryMonitor::batteryPin = -1;
 	std::map<uint16_t, uint8_t> BatteryMonitor::voltToPercMap;
 	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
 
-    void BatteryMonitor::setup(std::function<void(float_t, uint8_t)> p_onPercentageChanged)
+    void BatteryMonitor::setup(uint8_t p_batteryPin, std::function<void(float_t, uint8_t)> p_onPercentageChanged)
     { 
+        batteryPin = p_batteryPin;
+        pinMode(batteryPin, INPUT);
+
         onPercentageChanged = p_onPercentageChanged;
-        initializeVoltToPercMap();
     }
 
     void BatteryMonitor::checkStatus()
     {
+        if(batteryPin == -1) // Skip if not setup yet
+            return;
+
         readAndCalculateVoltage();
+        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
         auto new_percentage = calculatePercentage();
         if(new_percentage != percentage)
         {
@@ -40,38 +46,71 @@ namespace GNSS_RTK_ROVER
 
     float_t BatteryMonitor::readAndCalculateVoltage()
     {
-        auto reading = analogRead(batteryPin);
-        voltage = (VOLTAGEDIVIDER * AREF * reading) / 1023;
+        auto voltageReading = 0;
+        for (int i = 1; i <= 30; i++)
+        {
+            voltageReading = (voltageReading + analogRead(batteryPin) / 30);
+        }
+        voltage = (VOLTAGEDIVIDER * AREF * voltageReading)/1024;
         return voltage;
     }
 
 	uint8_t BatteryMonitor::calculatePercentage()
     {
         int voltDiscrete = voltage * 100;
-        return voltToPercMap[voltDiscrete];
+        if(voltDiscrete > 400)
+        {
+            return 100;
+        }
+        else if(voltDiscrete > 380)
+        {
+            return 75;
+        }
+        else if(voltDiscrete > 370)
+        {
+            return 50;
+        }
+        else if(voltDiscrete > 360)
+        {
+            return 25;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     void BatteryMonitor::initializeVoltToPercMap()
     {
-        for(int i = 250; i <= 270; i++)
+        Serial.println("intializing volt map");
+        for(uint16_t i = 250; i <= 270; i++)
         {
-            voltToPercMap[i] = 0;
+            voltToPercMap.insert(std::pair<uint16_t, uint8_t>(i, 0));
         }
-        for(int i = 271; i <= 330; i++)
+        for(uint16_t i = 271; i <= 330; i++)
         {
-            voltToPercMap[i] = 25;
+            Serial.print("Inserting in map: ");
+            Serial.println(i);
+            voltToPercMap.insert(std::pair<uint16_t, uint8_t>(i, 25));
         }
-        for(int i = 331; i <= 380; i++)
+        for(uint16_t i = 331; i <= 380; i++)
         {
-            voltToPercMap[i] = 50;
+            Serial.print("Inserting in map: ");
+            Serial.println(i);
+            voltToPercMap.insert(std::pair<uint16_t, uint8_t>(i, 50));
         }
-        for(int i = 381; i <= 400; i++)
+        for(uint16_t i = 381; i <= 400; i++)
         {
-            voltToPercMap[i] = 75;            
+            Serial.print("Inserting in map: ");
+            Serial.println(i);
+            voltToPercMap.insert(std::pair<uint16_t, uint8_t>(i, 75));      
         }
-        for(int i = 401; i <= 450; i++)
+        for(uint16_t i = 401; i <= 450; i++)
         {
-            voltToPercMap[i] = 100;
+            Serial.print("Inserting in map: ");
+            Serial.println(i);
+            voltToPercMap.insert(std::pair<uint16_t, uint8_t>(i, 100));
         }
+        Serial.println("finished volt map");
     }
 }

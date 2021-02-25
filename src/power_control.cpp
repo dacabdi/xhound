@@ -16,9 +16,12 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::setup(int _onOffPin, int _chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged)
     {
-        onOffState = false;
         onOffPin = _onOffPin;
         chargingStatePin = _chargingStatePin;
+        pinMode(chargingStatePin, INPUT);
+
+        onOffState = false;
+        chargingState = false;
         onTurnOnOff = _onTurnOnOff;
         onChargingChanged = _onChargingChanged;
         justChangedOnOff = false;
@@ -28,22 +31,15 @@ namespace GNSS_RTK_ROVER
         {
             turnOn();
         }
-        else
-        {
-            onChargingChanged(chargingState);
-        }
-
-        Serial.print("WokeUp, device onoffStatus: ");
-        Serial.println(onOffState);
     }
 
     void CPUPowerController::onOffSwitcher()
     {
-        Serial.println("OnOff Switch");
         auto now = millis();
-        if(now - powerSwitchLastPressed <= 50) // Debouncer
+        if(now - powerSwitchLastPressed <= 100) // Debouncer
             return;
         
+        Serial.println("OnOff Switch Pressed");
         if(onOffState)
         {
             if(now - powerSwitchLastPressed <= 1000)
@@ -76,14 +72,12 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::turnOn()
     {
-        Serial.println("Turn On");
         onOffState = true;
         onTurnOnOff(onOffState);
     }
 
     void CPUPowerController::turnOff()
     {
-        Serial.println("Turn Off");
         onOffState = false;
         onTurnOnOff(onOffState);
     }
@@ -95,7 +89,7 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::checkCharging()
     {
-        Serial.print("Checking...  ");
+        Serial.print("Checking external power...  ");
         auto currState = isCharging();
         Serial.println(currState);
         if(currState != chargingState)
@@ -105,12 +99,19 @@ namespace GNSS_RTK_ROVER
         }    
     }
 
-    void PeriferalPowerController::turnOn()
+    void PeripheralPowerController::setup(int powerPin, PinStatus defaultState) 
+    { 
+        m_powerPin = powerPin;
+        pinMode(m_powerPin, OUTPUT);
+        digitalWrite(m_powerPin, defaultState);
+    }
+
+    void PeripheralPowerController::turnOn()
     {
         digitalWrite(m_powerPin, LOW);
     }
 
-    void PeriferalPowerController::turnOff()
+    void PeripheralPowerController::turnOff()
     {
         digitalWrite(m_powerPin, HIGH);
     }
