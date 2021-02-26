@@ -48,16 +48,12 @@ namespace GNSS_RTK_ROVER
 
     inline void Buzzer::buzzBTConnected()
     {
-        digitalWrite(m_buzzPin, HIGH); 
-        delay(50);
-        digitalWrite(m_buzzPin, LOW); 
+        tone(m_buzzPin, NOTE_A6, 150); delay(200); tone(m_buzzPin, NOTE_G6, 200); delay(250); noTone(m_buzzPin);
     }
 
     inline void Buzzer::buzzBTDisconnected()
     {
-        digitalWrite(m_buzzPin, HIGH); 
-        delay(250);
-        digitalWrite(m_buzzPin, LOW); 
+        tone(m_buzzPin, NOTE_G6, 150); delay(200); tone(m_buzzPin, NOTE_A6, 200); delay(250); noTone(m_buzzPin);
     }
 
     inline void Buzzer::buzzBaseMode()
