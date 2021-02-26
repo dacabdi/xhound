@@ -10,12 +10,11 @@ namespace GNSS_RTK_ROVER
     BatteryView::BatteryView(Canvas* can, Vector2D pos) 
         : Component(can, pos, Dimensions2D{BATTERYVIEW_HEIGHT, BATTERYVIEW_WIDTH}), percentage(-1)
     {
-        this->percentageBitmaps[-1] = battery_unknown;
-        this->percentageBitmaps[0] = battery_0;
-        this->percentageBitmaps[25] = battery_25;
-        this->percentageBitmaps[50] = battery_50;
-        this->percentageBitmaps[75] = battery_75;
-        this->percentageBitmaps[100] = battery_100;
+        this->percentageBitmaps[-1] = battery_unknown_9x15;
+        this->percentageBitmaps[0] = battery_0_9x15;
+        this->percentageBitmaps[33] = battery_33_9x15;
+        this->percentageBitmaps[66] = battery_66_9x15;
+        this->percentageBitmaps[100] = battery_100_9x15;
     }
 
     void BatteryView::draw()
@@ -36,7 +35,7 @@ namespace GNSS_RTK_ROVER
     void BTStatusView::draw()
     {
         this->clear();
-        auto bitmap = this->active ? bt_on : bt_off;
+        auto bitmap = this->active ? bt_on_11x15 : bt_off_11x15;
         this->canvas->printBitMap(this->position.x, this->position.y, bitmap,
             this->dimensions.width, this->dimensions.height);
     }
@@ -52,26 +51,26 @@ namespace GNSS_RTK_ROVER
     void DivisionLineView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, division_line_v,
+        this->canvas->printBitMap(this->position.x, this->position.y, division_line_h_128x1,
             this->dimensions.width, this->dimensions.height);
     }
 
-    RoverStatusView::RoverStatusView(Canvas* can, Vector2D pos) 
-        : Component(can, pos, Dimensions2D{ROVERSTATUSVIEW_HEIGHT, ROVERSTATUSVIEW_WIDTH})
+    SolutionStatusView::SolutionStatusView(Canvas* can, Vector2D pos) 
+        : Component(can, pos, Dimensions2D{SOLUTIONSTATUSVIEW_HEIGHT, SOLUTIONSTATUSVIEW_WIDTH})
     {
-        this->statusBitmaps[RoverStatus::DGPS] = dgps;
-        this->statusBitmaps[RoverStatus::FloatRTK] = float_rtk;
-        this->statusBitmaps[RoverStatus::FixedRTK] = fixed_rtk;
+        this->statusBitmaps[SolutionStatus::DGPS] = dgps_48x13;
+        this->statusBitmaps[SolutionStatus::FLOAT] = float_48x13;
+        this->statusBitmaps[SolutionStatus::FIXED] = fixed_48x13;
     }
 
-    void RoverStatusView::draw()
+    void SolutionStatusView::draw()
     {
         this->clear();
         this->canvas->printBitMap(this->position.x, this->position.y, this->statusBitmaps[this->status],
             this->dimensions.width, this->dimensions.height);
     }
 
-    void RoverStatusView::setStatus(RoverStatus status)
+    void SolutionStatusView::setStatus(SolutionStatus status)
     {
         this->status = status;
     }

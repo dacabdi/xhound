@@ -55,12 +55,13 @@ LogoView* logoView;
 DivisionLineView* divisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
+SolutionStatusView* solutionStatusView;
 
 Schedule schedule;
 
 void start()
 {
-    analogWrite(ONOFFLED, 25);
+    analogWrite(ONOFFLED, 10);
     buzzer.buzzPowerOn();
 
     peripheralPower.turnOn();
@@ -75,9 +76,10 @@ void start()
             Serial.println("Display not connected. Trying...");
         });
     logoView = new LogoView(display, {0, 0});
-    divisionLineView = new DivisionLineView(display, {80, 0});
-    batteryView = new BatteryView(display, {106, 0});
-    btStatusView = new BTStatusView(display, {84, 0});
+    divisionLineView = new DivisionLineView(display, {0, 17});
+    batteryView = new BatteryView(display, {117, 1});
+    btStatusView = new BTStatusView(display, {106, 0});
+    solutionStatusView = new SolutionStatusView(display, {0, 0});
 
     BatteryMonitor::setup(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){
@@ -92,11 +94,17 @@ void start()
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
+            buzzer.buzzBTConnected();
+            solutionStatusView->setStatus(FIXED);
+            solutionStatusView->draw();
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
+            buzzer.buzzBTDisconnected();
+            solutionStatusView->setStatus(FLOAT);
+            solutionStatusView->draw();
         });
     Serial.println("Finished setting up bluetooth monitor");
 

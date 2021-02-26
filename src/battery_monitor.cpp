@@ -66,15 +66,11 @@ namespace GNSS_RTK_ROVER
         }
         else if(voltDiscrete > 380)
         {
-            return 75;
+            return 66;
         }
         else if(voltDiscrete > 370)
         {
-            return 50;
-        }
-        else if(voltDiscrete > 360)
-        {
-            return 25;
+            return 33;
         }
         else
         {

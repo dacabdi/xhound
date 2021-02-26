@@ -1,6 +1,5 @@
 #include <functional>
 
-#include "ArduinoLowPower.h"
 #include "power_control.h"
 
 namespace GNSS_RTK_ROVER
