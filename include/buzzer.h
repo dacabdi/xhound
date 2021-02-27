@@ -8,7 +8,7 @@ namespace GNSS_RTK_ROVER
     class Buzzer 
     {
         public:
-        Buzzer(int buzzPin) : m_buzzPin(buzzPin) {}
+        Buzzer(int buzzPin) : m_buzzPin(buzzPin) { pinMode(m_buzzPin, OUTPUT); }
 
         void buzzPowerOn();
         void buzzPowerOff();
