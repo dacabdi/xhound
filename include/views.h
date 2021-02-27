@@ -3,29 +3,29 @@
 
 #include "Arduino.h"
 
-#define LOGOVIEW_HEIGHT 32
 #define LOGOVIEW_WIDTH 128
+#define LOGOVIEW_HEIGHT 32
 
-#define BATTERYVIEW_HEIGHT 32
-#define BATTERYVIEW_WIDTH 21 
+#define BATTERYVIEW_WIDTH 9 
+#define BATTERYVIEW_HEIGHT 15
 
-#define BTSTATUSVIEW_HEIGHT 32
-#define BTSTATUSVIEW_WIDTH 21 
+#define BTSTATUSVIEW_WIDTH 11 
+#define BTSTATUSVIEW_HEIGHT 15
 
-#define DIVISIONLINEVIEW_HEIGHT 32
-#define DIVISIONLINEVIEW_WIDTH 1
+#define DIVISIONLINEVIEW_WIDTH 128
+#define DIVISIONLINEVIEW_HEIGHT 1
 
-#define ROVERSTATUSVIEW_HEIGHT 15
-#define ROVERSTATUSVIEW_WIDTH 64
+#define SOLUTIONTYPEVIEW_WIDTH 48
+#define SOLUTIONTYPEVIEW_HEIGHT 13
 
-#define OPMODEVIEW_HEIGHT 15
 #define OPMODEVIEW_WIDTH 64
+#define OPMODEVIEW_HEIGHT 15
 
-#define ACCURACYVIEW_HEIGHT 8
 #define ACCURACYVIEW_WIDTH 72
+#define ACCURACYVIEW_HEIGHT 8
 
-#define VOLTAGEVIEW_HEIGHT 8
 #define VOLTAGEVIEW_WIDTH 72
+#define VOLTAGEVIEW_HEIGHT 8
 
 namespace GNSS_RTK_ROVER
 {
@@ -59,17 +59,22 @@ namespace GNSS_RTK_ROVER
         void draw() override;
     };
 
-    class RoverStatusView : public Component 
+
+    class SolutionTypeView : public Component 
     {
         public:
         enum SolutionType
         {
-            DGPS = 0,
-            FloatRTK = 1,
-            FixedRTK = 2
+            NoFix,
+            TwoDFix,
+            ThreeDFix,
+            TimeFix,
+            DGPS,
+            FloatRTK,
+            FixedRTK
         };
 
-        RoverStatusView(Canvas* can, Vector2D pos);
+        SolutionTypeView(Canvas* can, Vector2D pos);
         void draw() override;
         void setStatus(SolutionType status);
 
@@ -83,8 +88,8 @@ namespace GNSS_RTK_ROVER
         public:
         enum Mode
         {
-            Rover = 0,
-            Base = 1
+            Rover,
+            Base
         };
 
         ModeView(Canvas* can, Vector2D pos);

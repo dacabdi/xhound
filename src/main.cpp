@@ -57,12 +57,13 @@ LogoView* logoView;
 DivisionLineView* divisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
+SolutionTypeView* solutionTypeView;
 
 Schedule schedule;
 
 void start()
 {
-    analogWrite(ONOFFLED, 25);
+    analogWrite(ONOFFLED, 10);
     buzzer.buzzPowerOn();
 
     peripheralPower.turnOn();
@@ -77,9 +78,10 @@ void start()
             Serial.println("Display not connected. Trying...");
         });
     logoView = new LogoView(display, {0, 0});
-    divisionLineView = new DivisionLineView(display, {80, 0});
-    batteryView = new BatteryView(display, {106, 0});
-    btStatusView = new BTStatusView(display, {84, 0});
+    divisionLineView = new DivisionLineView(display, {0, 17});
+    batteryView = new BatteryView(display, {117, 1});
+    btStatusView = new BTStatusView(display, {106, 0});
+    solutionTypeView = new SolutionTypeView(display, {0, 0});
 
     BatteryMonitor::setup(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){
@@ -93,11 +95,13 @@ void start()
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
+            buzzer.buzzBTConnected();
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
+            buzzer.buzzBTDisconnected();
         });
     Serial.println("Finished setting up bluetooth monitor");
 
@@ -113,29 +117,37 @@ void start()
             switch(solutionType) 
             {
                 case GPSConfig::NoFix:
+                    solutionTypeView->setStatus(SolutionTypeView::NoFix);
                     Serial.println("No Fix");
                     break;
-                case GPSConfig::TwoD:
-                    Serial.println("2D");
+                case GPSConfig::TwoDFix:
+                    solutionTypeView->setStatus(SolutionTypeView::TwoDFix);
+                    Serial.println("2D Fix");
                     break;
-                case GPSConfig::ThreeD:
-                    Serial.println("3D");
+                case GPSConfig::ThreeDFix:
+                    solutionTypeView->setStatus(SolutionTypeView::ThreeDFix);
+                    Serial.println("3D Fix");
                     break;
-                case GPSConfig::GNSS:
-                    Serial.println("GNSS");
+                case GPSConfig::TimeFix:
+                    solutionTypeView->setStatus(SolutionTypeView::TimeFix);
+                    Serial.println("Time Fix");
                     break;
                 case GPSConfig::DGPS:
+                    solutionTypeView->setStatus(SolutionTypeView::DGPS);
                     Serial.println("DGPS");
                     break;
                 case GPSConfig::FloatRTK:
+                    solutionTypeView->setStatus(SolutionTypeView::FloatRTK);
                     Serial.println("Float RTK");
                     break;
                 case GPSConfig::FixedRTK:
+                    solutionTypeView->setStatus(SolutionTypeView::FixedRTK);
                     Serial.println("Fixed RTK");
                     break;
                 default:
                     Serial.println("Unknown");
             }
+            solutionTypeView->draw();
         },
         [&](GPSConfig::Mode mode){
 
@@ -148,6 +160,7 @@ void start()
     divisionLineView->draw();
     batteryView->draw();
     btStatusView->draw();
+    solutionTypeView->draw();
 }
 
 void stop()

@@ -13,11 +13,11 @@ namespace GNSS_RTK_ROVER
             UnknownSolutionType,
             NoFix,
             DeadReckoning,
-            TwoD,
-            ThreeD,
+            TwoDFix,
+            ThreeDFix,
             GNSS,
             DGPS,
-            TimeFixed,
+            TimeFix,
             FloatRTK,
             FixedRTK
         };

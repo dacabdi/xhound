@@ -220,13 +220,13 @@ namespace GNSS_RTK_ROVER
             case 1:
                 return DeadReckoning;
             case 2:
-                return TwoD;
+                return TwoDFix;
             case 3:
-                return ThreeD;
+                return ThreeDFix;
             case 4:
                 return GNSS;
             case 5:
-                return TimeFixed;
+                return TimeFix;
         }
         return NoFix;
     }
