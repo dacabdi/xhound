@@ -78,6 +78,12 @@ namespace GNSS_RTK_ROVER
         std::map<SolutionStatus, const uint8_t*> statusBitmaps;
     };
 
+    enum OperationalMode
+    {
+        Rover = 0,
+        Base = 1
+    };
+
     class ModeView : public Component
     {
         public:
