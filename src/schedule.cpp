@@ -1,4 +1,3 @@
-#include <vector>
 #include "Timer.h"
 
 #include "schedule.h"
@@ -9,14 +8,23 @@ namespace GNSS_RTK_ROVER
     {
         auto event = Timer();
         event.every(period, callback);
-        this->events.push_back(event);
+        if(this->timersCount < SCHEDULE_MAX_SLOTS)
+        {
+            this->events[this->timersCount++] = event;
+        }
+        else
+        {
+            Serial.println("Error: schedule ran out of slots");
+        }
+        Serial.print("Added event, curr slot ");
+        Serial.println(this->timersCount);
     }
 
     void Schedule::Update()
     {
-        for(auto it = this->events.begin(); it != this->events.cend(); it++)
+        for(uint8_t i = 0; i < this->timersCount; i++)
         {
-            it->update();
+            this->events[i].update();
         }
     }
 }

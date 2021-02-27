@@ -29,6 +29,8 @@
 #include "views.h"
 
 #define MONITOR_SERIAL_BAUD 115200
+#define GPS_UART1_BAUD 115200
+#define GPS_UART2_BAUD 115200
 
 #define ONOFFPIN 1
 #define CHARGINGPIN 8
@@ -81,7 +83,6 @@ void start()
 
     BatteryMonitor::setup(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){
-            Serial.println("Running on bat changed routine");
             batteryView->setPercentage(percentage);
             batteryView->draw();
         });
@@ -99,6 +100,33 @@ void start()
             btStatusView->draw();
         });
     Serial.println("Finished setting up bluetooth monitor");
+
+    GPSConfig::setup(GPS_UART1_BAUD, GPS_UART2_BAUD,
+        [&](){ // onConnected
+            Serial.println("GPS connected");
+        },
+        [&](){ // onTryingConnection
+            Serial.println("GPS not connected. Trying...");
+        },
+        [&](GPSConfig::SolutionType solutionType){
+            switch(solutionType) 
+            {
+                case GPSConfig::DGPS:
+                    Serial.println("DGPS");
+                    break;
+                case GPSConfig::FLOAT_RTK:
+                    Serial.println("Float RTK");
+                    break;
+                case GPSConfig::FIXED_RTK:
+                    Serial.println("Fixed RTK");
+                    break;
+                default:
+                    Serial.println("No Solution");
+            }
+        },
+        [&](GPSConfig::Mode mode){
+
+        });
 
     logoView->draw();
     delay(3000);
@@ -174,10 +202,10 @@ void setup()
     schedule.AddEvent(1000, CPUPowerController::checkCharging);
     schedule.AddEvent(1000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
+    schedule.AddEvent(1000, GPSConfig::checkStatus);
 
     Serial.println("Finished Setup");
 	delay(2000);
-    
 }
 
 void loop()

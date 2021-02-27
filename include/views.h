@@ -59,41 +59,41 @@ namespace GNSS_RTK_ROVER
         void draw() override;
     };
 
-    enum RoverStatus
-    {
-        DGPS = 0,
-        FloatRTK = 1,
-        FixedRTK = 2
-    };
-
     class RoverStatusView : public Component 
     {
         public:
+        enum SolutionType
+        {
+            DGPS = 0,
+            FloatRTK = 1,
+            FixedRTK = 2
+        };
+
         RoverStatusView(Canvas* can, Vector2D pos);
         void draw() override;
-        void setStatus(RoverStatus status);
+        void setStatus(SolutionType status);
 
         private:
-        RoverStatus status;
-        std::map<RoverStatus, const uint8_t*> statusBitmaps;
+        SolutionType status;
+        std::map<SolutionType, const uint8_t*> statusBitmaps;
     };
 
-    enum OperationalMode
-    {
-        Rover = 0,
-        Base = 1
-    };
-
-    class OperationalModeView : public Component
+    class ModeView : public Component
     {
         public:
-        OperationalModeView(Canvas* can, Vector2D pos);
+        enum Mode
+        {
+            Rover = 0,
+            Base = 1
+        };
+
+        ModeView(Canvas* can, Vector2D pos);
         void draw() override;
-        void setOperationalMode(OperationalMode mode);
+        void setOperationalMode(Mode mode);
         
         private:
-        OperationalMode mode;
-        std::map<OperationalMode, const uint8_t*> operationalModeBitmaps;
+        Mode mode;
+        std::map<Mode, const uint8_t*> modeBitmaps;
     };
 
     class AccuracyView : public Component
