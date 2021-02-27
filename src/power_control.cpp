@@ -24,6 +24,7 @@ namespace GNSS_RTK_ROVER
         onTurnOnOff = _onTurnOnOff;
         onChargingChanged = _onChargingChanged;
         justChangedOnOff = false;
+        pinMode(onOffPin, INPUT_PULLUP);
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
 
         if(!isCharging())
@@ -115,6 +116,7 @@ namespace GNSS_RTK_ROVER
             delay(100);
         }
 
+        pinMode(onOffPin, INPUT_PULLUP);
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
     }
 
