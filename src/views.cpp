@@ -55,22 +55,22 @@ namespace GNSS_RTK_ROVER
             this->dimensions.width, this->dimensions.height);
     }
 
-    SolutionStatusView::SolutionStatusView(Canvas* can, Vector2D pos) 
+    SolutionTypeView::SolutionTypeView(Canvas* can, Vector2D pos) 
         : Component(can, pos, Dimensions2D{SOLUTIONSTATUSVIEW_HEIGHT, SOLUTIONSTATUSVIEW_WIDTH})
     {
-        this->statusBitmaps[SolutionStatus::DGPS] = dgps_48x13;
-        this->statusBitmaps[SolutionStatus::FLOAT] = float_48x13;
-        this->statusBitmaps[SolutionStatus::FIXED] = fixed_48x13;
+        this->statusBitmaps[SolutionType::DGPS] = dgps_48x13;
+        this->statusBitmaps[SolutionType::Float] = float_48x13;
+        this->statusBitmaps[SolutionType::Fixed] = fixed_48x13;
     }
 
-    void SolutionStatusView::draw()
+    void SolutionTypeView::draw()
     {
         this->clear();
         this->canvas->printBitMap(this->position.x, this->position.y, this->statusBitmaps[this->status],
             this->dimensions.width, this->dimensions.height);
     }
 
-    void SolutionStatusView::setStatus(SolutionStatus status)
+    void SolutionTypeView::setStatus(SolutionType status)
     {
         this->status = status;
     }
