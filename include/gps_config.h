@@ -8,37 +8,59 @@ namespace GNSS_RTK_ROVER
     class GPSConfig
     {
         public:
-        GPSConfig(int serialBaud, std::function<void()> onConnected, std::function<void()> onTryingConnection,
-            std::function<void()> onReset, std::function<void()> onNMEA, std::function<void()> onUBX);
-        void initialize();
-        void factoryReset();
-        void checkForStatus();
-        void configureForNMEA();
-        void configureAsBase();
-        void configureDisableBase();
-        uint8_t getSolution();
-        float meanAccuracy();
-        bool check_isBaseActivated();
+        enum SolutionType 
+        {
+            UnknownSolutionType,
+            NoFix,
+            DeadReckoning,
+            TwoD,
+            ThreeD,
+            GNSS,
+            DGPS,
+            TimeFixed,
+            FloatRTK,
+            FixedRTK
+        };
+        
+        enum Mode
+        {
+            UnknownMode,
+            Rover,
+            Base
+        };
+
+        static void setup(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
+            std::function<void(SolutionType)> onSolutionTypeChanged, std::function<void(Mode)> onModeChanged);
+
+        static void checkStatus();
 
         private:
-        void connect();
-        void configureUnusedPorts();
-        void configureI2C();
-        void configureNMEAMsgs();
-        void disableUBXNavMsgs();
-        void disableUBXRxmMsgs();
-        void configureForUBX();
-        void configureAntenna();
-                
-        SFE_UBLOX_GPS m_gps;
-        int m_serialBaud;
-        bool m_usingUBX;
-        int m_checkCount;
-        std::function<void()> m_onConnected;
-        std::function<void()> m_onTryingConnection;
-        std::function<void()> m_onReset;
-        std::function<void()> m_onNMEA;
-        std::function<void()> m_onUBX;
+        static void connect();
+        static void factoryReset();
+        static void configureDefault();
+        static void configurePorts();
+        static void configureAntenna();
+        static void configureForNMEA();
+        static void configureNMEAMsgs();
+        static void disableUBXNavMsgs();
+        static void disableUBXRxmMsgs();
+        static void configureAsBase();
+        static void configureDisableBase();
+
+        static SolutionType getSolutionType();
+        static Mode getMode();
+            
+        static SFE_UBLOX_GPS gps;
+        static int serialBaudUart1;
+        static int serialBaudUart2;
+
+        static bool initialized;
+        static SolutionType currSolutionType;
+        static Mode currMode;
+        static std::function<void()> onConnected;
+        static std::function<void()> onTryingConnection;
+        static std::function<void(SolutionType)> onSolutionTypeChanged;
+        static std::function<void(Mode)> onModeChanged;
     };
 }
 

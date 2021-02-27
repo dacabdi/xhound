@@ -59,9 +59,9 @@ namespace GNSS_RTK_ROVER
     RoverStatusView::RoverStatusView(Canvas* can, Vector2D pos) 
         : Component(can, pos, Dimensions2D{ROVERSTATUSVIEW_HEIGHT, ROVERSTATUSVIEW_WIDTH})
     {
-        this->statusBitmaps[RoverStatus::DGPS] = dgps;
-        this->statusBitmaps[RoverStatus::FloatRTK] = float_rtk;
-        this->statusBitmaps[RoverStatus::FixedRTK] = fixed_rtk;
+        this->statusBitmaps[SolutionType::DGPS] = dgps;
+        this->statusBitmaps[SolutionType::FloatRTK] = float_rtk;
+        this->statusBitmaps[SolutionType::FixedRTK] = fixed_rtk;
     }
 
     void RoverStatusView::draw()
@@ -71,26 +71,26 @@ namespace GNSS_RTK_ROVER
             this->dimensions.width, this->dimensions.height);
     }
 
-    void RoverStatusView::setStatus(RoverStatus status)
+    void RoverStatusView::setStatus(SolutionType status)
     {
         this->status = status;
     }
 
-    OperationalModeView::OperationalModeView(Canvas* can, Vector2D pos) 
+    ModeView::ModeView(Canvas* can, Vector2D pos) 
         : Component(can, pos, Dimensions2D{OPMODEVIEW_HEIGHT, OPMODEVIEW_WIDTH})
     {
-        this->operationalModeBitmaps[OperationalMode::Rover] = rover_mode;
-        this->operationalModeBitmaps[OperationalMode::Base] = base_mode;
+        this->modeBitmaps[Mode::Rover] = rover_mode;
+        this->modeBitmaps[Mode::Base] = base_mode;
     }
 
-    void OperationalModeView::draw()
+    void ModeView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, this->operationalModeBitmaps[this->mode],
+        this->canvas->printBitMap(this->position.x, this->position.y, this->modeBitmaps[this->mode],
             this->dimensions.width, this->dimensions.height);
     }
 
-    void OperationalModeView::setOperationalMode(OperationalMode mode)
+    void ModeView::setOperationalMode(Mode mode)
     {
         this->mode = mode;
     }
