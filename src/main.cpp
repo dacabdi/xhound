@@ -26,6 +26,7 @@
 #include "battery_monitor.h"
 #include "bluetooth_monitor.h"
 #include "schedule.h"
+#include "leds.h"
 #include "views.h"
 
 #define MONITOR_SERIAL_BAUD 115200
@@ -38,10 +39,10 @@
 
 #define PERIPHERALPOWERPIN 0
 
-#define ONOFFLED A3
+#define ONOFF_LEDPIN A3
 #define SPARE_LEFT A4
 #define SPARE_RIGHT 2
-#define EXTERNALPOWERLED 3
+#define BATTERY_LEDPIN 3
 
 #define BUZZERPIN A0
 #define BLUETOOTHPIN 7
@@ -51,6 +52,9 @@ using namespace GNSS_RTK_ROVER;
 PeripheralPowerController peripheralPower;
 
 Buzzer buzzer(BUZZERPIN);
+
+LED onOffLED(ONOFF_LEDPIN);
+LED batteryLED(BATTERY_LEDPIN);
 
 Canvas* display;
 LogoView* logoView;
@@ -63,7 +67,7 @@ Schedule schedule;
 
 void start()
 {
-    analogWrite(ONOFFLED, 10);
+    onOffLED.set(10);
     buzzer.buzzPowerOn();
 
     peripheralPower.turnOn();
@@ -177,24 +181,24 @@ void stop()
     int counter = 2;
     while(counter--)
     {
-        analogWrite(ONOFFLED, 0);
+        onOffLED.set(0);
         delay(200);
-        analogWrite(ONOFFLED, 100);
+        onOffLED.set(10);
         delay(200);
     }
-    analogWrite(ONOFFLED, 0);
+    onOffLED.set(0);
 }
 
 void externalPowerConnected()
 {
     buzzer.buzzCharging();
-    analogWrite(EXTERNALPOWERLED, 255);
+    batteryLED.set(255);
 }
 
 void externalPowerDisconnected()
 {
     buzzer.buzzNoCharging();
-    analogWrite(EXTERNALPOWERLED, 0);
+    batteryLED.set(0);
 }
 
 void setup()
@@ -205,11 +209,6 @@ void setup()
 	Serial.begin(MONITOR_SERIAL_BAUD);
 	delay(2000);
 	Serial.println("UARTS & I2C Initialized...");
-
-    // Pin Modes
-    pinMode(BUZZERPIN, OUTPUT);
-    pinMode(ONOFFLED, OUTPUT); // TODO: Make LED controller class
-    pinMode(EXTERNALPOWERLED, OUTPUT);
 
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
 
@@ -245,6 +244,7 @@ void setup()
     schedule.AddEvent(1000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
     schedule.AddEvent(1000, GPSConfig::checkStatus);
+    schedule.AddEvent(100, LED::refreshInstances);
 
     Serial.println("Finished Setup");
 	delay(2000);
