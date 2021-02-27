@@ -11,8 +11,8 @@ namespace GNSS_RTK_ROVER
     int GPSConfig::serialBaudUart1;
     int GPSConfig::serialBaudUart2;
     bool GPSConfig::initialized = false;
-    GPSConfig::SolutionType GPSConfig::currSolutionType = GPSConfig::UNKNOWN;
-    GPSConfig::Mode GPSConfig::currMode = GPSConfig::ROVER;
+    GPSConfig::SolutionType GPSConfig::currSolutionType = GPSConfig::UnknownSolutionType;
+    GPSConfig::Mode GPSConfig::currMode = GPSConfig::UnknownMode;
     std::function<void()> GPSConfig::onConnected;
     std::function<void()> GPSConfig::onTryingConnection;
     std::function<void(GPSConfig::SolutionType)> GPSConfig::onSolutionTypeChanged;
@@ -29,6 +29,7 @@ namespace GNSS_RTK_ROVER
         onSolutionTypeChanged = _onSolutionTypeChanged;
         onModeChanged = _onModeChanged;
         connect();
+
     }
 
     void GPSConfig::configureDefault()
@@ -66,16 +67,12 @@ namespace GNSS_RTK_ROVER
             return;
 
         auto solType = getSolutionType();
-        Serial.print("Solution Type: ");
-        Serial.println(solType);
         if(solType != currSolutionType)
         {
             currSolutionType = solType;
             onSolutionTypeChanged(currSolutionType);
         }
         auto mode = getMode();
-        Serial.print("Mode: ");
-        Serial.println(mode);
         if(mode != currMode)
         {
             currMode = mode;
@@ -204,7 +201,34 @@ namespace GNSS_RTK_ROVER
 
     GPSConfig::SolutionType GPSConfig::getSolutionType()
     {
-        return (SolutionType)gps.getCarrierSolutionType();
+        if(gps.getDiffSoln())
+        {
+            auto carrierSolutionType = gps.getCarrierSolutionType();
+            switch(carrierSolutionType)
+            {
+                case 0:
+                    return DGPS;
+                case 1:
+                    return FloatRTK;
+                case 2:
+                    return FixedRTK;
+            }
+        }
+        auto fixType = gps.getFixType();
+        switch(fixType)
+        {
+            case 1:
+                return DeadReckoning;
+            case 2:
+                return TwoD;
+            case 3:
+                return ThreeD;
+            case 4:
+                return GNSS;
+            case 5:
+                return TimeFixed;
+        }
+        return NoFix;
     }
 
     GPSConfig::Mode GPSConfig::getMode()

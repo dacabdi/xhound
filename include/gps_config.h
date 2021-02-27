@@ -10,16 +10,23 @@ namespace GNSS_RTK_ROVER
         public:
         enum SolutionType 
         {
+            UnknownSolutionType,
+            NoFix,
+            DeadReckoning,
+            TwoD,
+            ThreeD,
+            GNSS,
             DGPS,
-            FLOAT_RTK,
-            FIXED_RTK,
-            UNKNOWN
+            TimeFixed,
+            FloatRTK,
+            FixedRTK
         };
         
         enum Mode
         {
-            ROVER,
-            BASE
+            UnknownMode,
+            Rover,
+            Base
         };
 
         static void setup(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,

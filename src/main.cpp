@@ -109,19 +109,32 @@ void start()
             Serial.println("GPS not connected. Trying...");
         },
         [&](GPSConfig::SolutionType solutionType){
+            Serial.print("Solution type: ");
             switch(solutionType) 
             {
+                case GPSConfig::NoFix:
+                    Serial.println("No Fix");
+                    break;
+                case GPSConfig::TwoD:
+                    Serial.println("2D");
+                    break;
+                case GPSConfig::ThreeD:
+                    Serial.println("3D");
+                    break;
+                case GPSConfig::GNSS:
+                    Serial.println("GNSS");
+                    break;
                 case GPSConfig::DGPS:
                     Serial.println("DGPS");
                     break;
-                case GPSConfig::FLOAT_RTK:
+                case GPSConfig::FloatRTK:
                     Serial.println("Float RTK");
                     break;
-                case GPSConfig::FIXED_RTK:
+                case GPSConfig::FixedRTK:
                     Serial.println("Fixed RTK");
                     break;
                 default:
-                    Serial.println("No Solution");
+                    Serial.println("Unknown");
             }
         },
         [&](GPSConfig::Mode mode){
