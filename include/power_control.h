@@ -26,20 +26,20 @@ namespace GNSS_RTK_ROVER
         static bool chargingState;
 
         static uint64_t powerSwitchLastPressed;
-		static bool justChangedOnOff;
+        static bool justChangedOnOff;
         static std::function<void(bool)> onTurnOnOff;
         static std::function<void(bool)> onChargingChanged;
     };
 
     class PeripheralPowerController
     {
-      public:
-	  void setup(int powerPin, PinStatus defaultState);
-      void turnOn();
-      void turnOff();
+        public:
+        void setup(int powerPin, PinStatus defaultState);
+        void turnOn();
+        void turnOff();
 
-      private:
-      int m_powerPin;
+        private:
+        int m_powerPin;
     };
 }
 
