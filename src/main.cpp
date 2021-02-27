@@ -173,6 +173,15 @@ void stop()
     GPSConfig::stop();
     peripheralPower.turnOff();
     buzzer.buzzPowerOff();
+    
+    int counter = 2;
+    while(counter--)
+    {
+        analogWrite(ONOFFLED, 0);
+        delay(200);
+        analogWrite(ONOFFLED, 100);
+        delay(200);
+    }
     analogWrite(ONOFFLED, 0);
 }
 

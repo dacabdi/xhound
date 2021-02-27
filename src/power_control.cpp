@@ -24,6 +24,7 @@ namespace GNSS_RTK_ROVER
         onTurnOnOff = _onTurnOnOff;
         onChargingChanged = _onChargingChanged;
         justChangedOnOff = false;
+        pinMode(onOffPin, INPUT_PULLUP);
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
 
         if(!isCharging())
@@ -91,9 +92,32 @@ namespace GNSS_RTK_ROVER
         auto currState = isCharging();
         if(currState != chargingState)
         {
+            if(!currState && !onOffState)
+            {
+                turnOffPowerModule();
+            }
             chargingState = currState;
             onChargingChanged(chargingState);
         }    
+    }
+
+    void CPUPowerController::turnOffPowerModule()
+    {
+        onTurnOnOff(onOffState);
+        detachInterrupt(digitalPinToInterrupt(onOffPin));
+        pinMode(onOffPin, OUTPUT);
+
+        int counter = 2;
+        while(counter--)
+        {
+            digitalWrite(onOffPin, LOW);
+            delay(100);
+            digitalWrite(onOffPin, HIGH);
+            delay(100);
+        }
+
+        pinMode(onOffPin, INPUT_PULLUP);
+        attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
     }
 
     void PeripheralPowerController::setup(int powerPin, PinStatus defaultState) 

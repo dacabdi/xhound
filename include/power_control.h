@@ -10,8 +10,9 @@ namespace GNSS_RTK_ROVER
         public:
         static void setup(int onOffPin, int chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged);
         static bool isCharging();
-		static void checkOnOffStatus();
+	    static void checkOnOffStatus();
         static void checkCharging();
+        static void turnOffPowerModule();
 
         private:
         CPUPowerController();
