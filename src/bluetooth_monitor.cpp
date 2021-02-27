@@ -10,7 +10,7 @@ namespace GNSS_RTK_ROVER
 	std::function<void()> BluetoothMonitor::onConnected;
     std::function<void()> BluetoothMonitor::onDisconnected;
 
-    void BluetoothMonitor::setup(uint8_t _statePin, std::function<void()> _onConnected, std::function<void()> _onDisconnected)
+    void BluetoothMonitor::start(uint8_t _statePin, std::function<void()> _onConnected, std::function<void()> _onDisconnected)
     { 
         initialized = true;
         statePin = _statePin;
@@ -18,6 +18,11 @@ namespace GNSS_RTK_ROVER
 
         onConnected = _onConnected;
         onDisconnected = _onDisconnected;
+    }
+
+    void BluetoothMonitor::stop()
+    { 
+        initialized = false;
     }
 
     void BluetoothMonitor::checkStatus()

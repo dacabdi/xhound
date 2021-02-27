@@ -29,9 +29,9 @@ namespace GNSS_RTK_ROVER
             Base
         };
 
-        static void setup(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
+        static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
             std::function<void(SolutionType)> onSolutionTypeChanged, std::function<void(Mode)> onModeChanged);
-
+        static void stop();
         static void checkStatus();
 
         private:

@@ -27,9 +27,9 @@ namespace GNSS_RTK_ROVER
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
 
         if(!isCharging())
-        {
             turnOn();
-        }
+        else
+            turnOff();
     }
 
     void CPUPowerController::onOffSwitcher()
