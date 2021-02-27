@@ -18,7 +18,7 @@ namespace GNSS_RTK_ROVER
     std::function<void(GPSConfig::SolutionType)> GPSConfig::onSolutionTypeChanged;
     std::function<void(GPSConfig::Mode)> GPSConfig::onModeChanged;
 
-    void GPSConfig::setup(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> _onConnected, std::function<void()> _onTryingConnection,
+    void GPSConfig::start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> _onConnected, std::function<void()> _onTryingConnection,
             std::function<void(GPSConfig::SolutionType)> _onSolutionTypeChanged, std::function<void(GPSConfig::Mode)> _onModeChanged)
     {
         initialized = true;
@@ -30,6 +30,11 @@ namespace GNSS_RTK_ROVER
         onModeChanged = _onModeChanged;
         connect();
 
+    }
+
+    void GPSConfig::stop()
+    {
+        initialized = false;
     }
 
     void GPSConfig::configureDefault()

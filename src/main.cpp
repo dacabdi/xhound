@@ -83,14 +83,14 @@ void start()
     btStatusView = new BTStatusView(display, {106, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
 
-    BatteryMonitor::setup(BATTERYPIN,
+    BatteryMonitor::start(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){
             batteryView->setPercentage(percentage);
             batteryView->draw();
         });
     Serial.println("Finished setting up battery monitor");
 
-    BluetoothMonitor::setup(BLUETOOTHPIN,
+    BluetoothMonitor::start(BLUETOOTHPIN,
         [&](){ // onConnected
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
@@ -105,7 +105,7 @@ void start()
         });
     Serial.println("Finished setting up bluetooth monitor");
 
-    GPSConfig::setup(GPS_UART1_BAUD, GPS_UART2_BAUD,
+    GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
         [&](){ // onConnected
             Serial.println("GPS connected");
         },
@@ -165,6 +165,13 @@ void start()
 
 void stop()
 {
+    BatteryMonitor::start(BATTERYPIN,
+        [&](float_t voltage, uint8_t percentage){
+            Serial.println("Batt Monitor in off routine");
+        });
+    BluetoothMonitor::stop();
+    GPSConfig::stop();
+    peripheralPower.turnOff();
     buzzer.buzzPowerOff();
     analogWrite(ONOFFLED, 0);
 }
