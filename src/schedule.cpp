@@ -16,8 +16,6 @@ namespace GNSS_RTK_ROVER
         {
             Serial.println("Error: schedule ran out of slots");
         }
-        Serial.print("Added event, curr slot ");
-        Serial.println(this->timersCount);
     }
 
     void Schedule::Update()

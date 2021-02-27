@@ -15,8 +15,8 @@
 #define DIVISIONLINEVIEW_WIDTH 128
 #define DIVISIONLINEVIEW_HEIGHT 1
 
-#define SOLUTIONSTATUSVIEW_WIDTH 48
-#define SOLUTIONSTATUSVIEW_HEIGHT 13
+#define SOLUTIONTYPEVIEW_WIDTH 48
+#define SOLUTIONTYPEVIEW_HEIGHT 13
 
 #define OPMODEVIEW_WIDTH 64
 #define OPMODEVIEW_HEIGHT 15
@@ -65,9 +65,13 @@ namespace GNSS_RTK_ROVER
         public:
         enum SolutionType
         {
-            DGPS = 0,
-            Float = 1,
-            Fixed = 2
+            NoFix,
+            TwoDFix,
+            ThreeDFix,
+            TimeFix,
+            DGPS,
+            FloatRTK,
+            FixedRTK
         };
 
         SolutionTypeView(Canvas* can, Vector2D pos);

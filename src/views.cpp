@@ -56,11 +56,16 @@ namespace GNSS_RTK_ROVER
     }
 
     SolutionTypeView::SolutionTypeView(Canvas* can, Vector2D pos) 
-        : Component(can, pos, Dimensions2D{SOLUTIONSTATUSVIEW_HEIGHT, SOLUTIONSTATUSVIEW_WIDTH})
+        : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
-        this->statusBitmaps[SolutionType::DGPS] = dgps_48x13;
-        this->statusBitmaps[SolutionType::Float] = float_48x13;
-        this->statusBitmaps[SolutionType::Fixed] = fixed_48x13;
+        this->status = NoFix;
+        this->statusBitmaps[NoFix] = no_fix_48x13;
+        this->statusBitmaps[TwoDFix] = twoD_fix_48x13;
+        this->statusBitmaps[ThreeDFix] = threeD_fix_48x13;
+        this->statusBitmaps[TimeFix] = time_fix_48x13;
+        this->statusBitmaps[DGPS] = dgps_48x13;
+        this->statusBitmaps[FloatRTK] = float_rtk_48x13;
+        this->statusBitmaps[FixedRTK] = fixed_rtk_48x13;
     }
 
     void SolutionTypeView::draw()
