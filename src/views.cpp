@@ -144,7 +144,7 @@ namespace GNSS_RTK_ROVER
     void LogoView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, logo_128x32,
+        this->canvas->printBitMap(this->position.x, this->position.y, logo_128x31,
             this->dimensions.width, this->dimensions.height);
     }
 }

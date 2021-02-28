@@ -4,7 +4,7 @@
 #include "Arduino.h"
 
 #define LOGOVIEW_WIDTH 128
-#define LOGOVIEW_HEIGHT 32
+#define LOGOVIEW_HEIGHT 31
 
 #define BATTERYVIEW_WIDTH 9 
 #define BATTERYVIEW_HEIGHT 15
