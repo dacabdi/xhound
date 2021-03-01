@@ -40,9 +40,9 @@
 #define PERIPHERALPOWERPIN 0
 
 #define ONOFF_LEDPIN A3
-#define SPARE_LEFT A4
-#define SPARE_RIGHT 2
-#define BATTERY_LEDPIN 3
+#define BATTERY_LEDPIN A4
+#define SPARE_RED 2
+#define SPARE_BLUE 3
 
 #define BUZZERPIN A0
 #define BLUETOOTHPIN 7
@@ -67,7 +67,7 @@ Schedule schedule;
 
 void start()
 {
-    onOffLED.set(10);
+    onOffLED.set(5);
     buzzer.buzzPowerOn();
 
     peripheralPower.turnOn();
@@ -88,9 +88,17 @@ void start()
     solutionTypeView = new SolutionTypeView(display, {0, 0});
 
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, uint8_t percentage){
+        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
             batteryView->setPercentage(percentage);
             batteryView->draw();
+        },
+        [&](){ // onBatteryFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255);
+        },
+        [&](){ // onBatteryNotFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255, 0);
         });
     Serial.println("Finished setting up battery monitor");
 
@@ -170,8 +178,16 @@ void start()
 void stop()
 {
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, uint8_t percentage){
+        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
             Serial.println("Batt Monitor in off routine");
+        },
+        [&](){ // onBatteryFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255);
+        },
+        [&](){ // onBatteryNotFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255, 500);
         });
     BluetoothMonitor::stop();
     GPSConfig::stop();
@@ -192,12 +208,17 @@ void stop()
 void externalPowerConnected()
 {
     buzzer.buzzCharging();
-    batteryLED.set(255);
+    BatteryMonitor::setChargingState(true);
+    if(BatteryMonitor::isBatteryFull())
+        batteryLED.set(255);
+    else
+        batteryLED.set(255, 500);
 }
 
 void externalPowerDisconnected()
 {
     buzzer.buzzNoCharging();
+    BatteryMonitor::setChargingState(false);
     batteryLED.set(0);
 }
 
@@ -239,12 +260,12 @@ void setup()
             }
         });
 
-    schedule.AddEvent(1000, CPUPowerController::checkOnOffStatus);
-    schedule.AddEvent(1000, CPUPowerController::checkCharging);
-    schedule.AddEvent(1000, BatteryMonitor::checkStatus);
+    schedule.AddEvent(500, CPUPowerController::checkOnOffStatus);
+    schedule.AddEvent(2000, CPUPowerController::checkCharging);
+    schedule.AddEvent(100, LED::refreshInstances);
+    schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
     schedule.AddEvent(1000, GPSConfig::checkStatus);
-    schedule.AddEvent(100, LED::refreshInstances);
 
     Serial.println("Finished Setup");
 	delay(2000);
