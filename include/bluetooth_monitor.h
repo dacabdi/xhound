@@ -7,18 +7,18 @@ namespace GNSS_RTK_ROVER
 {
 	class BluetoothMonitor
 	{
-        public:
+		public:
 
-        static void start(uint8_t _statePin, std::function<void()> _onConnected, std::function<void()> _onDisconnected);
-        static void stop();
-        static void checkStatus();
+		static void start(uint8_t _statePin, std::function<void()> _onConnected, std::function<void()> _onDisconnected);
+		static void stop();
+		static void checkStatus();
 
-        private:
-        static bool initialized;
-        static bool state;
-        static uint8_t statePin;
-        static std::function<void()> onConnected;
-        static std::function<void()> onDisconnected;
+		private:
+		static bool initialized;
+		static bool state;
+		static uint8_t statePin;
+		static std::function<void()> onConnected;
+		static std::function<void()> onDisconnected;
 	};
 }
 
