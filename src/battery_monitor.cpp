@@ -38,7 +38,7 @@ namespace GNSS_RTK_ROVER
         if(!initialized)  // Skip if not setup yet
             return;
 
-        if(!readAndCalculateVoltage())
+        if(!readAndCalculateVoltage() && percentage != -1)
             return;
 
         Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
