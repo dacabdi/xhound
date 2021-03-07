@@ -35,6 +35,7 @@ namespace GNSS_RTK_ROVER
     class Component
     {
         public:
+        Component() {}
         Component(Canvas* can, Vector2D pos, Dimensions2D dim);
         virtual void draw() = 0;
         void clear();
