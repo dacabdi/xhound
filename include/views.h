@@ -32,6 +32,7 @@ namespace GNSS_RTK_ROVER
     class BatteryView : public Component 
     {
         public:
+        BatteryView() {}
         BatteryView(Canvas* can, Vector2D pos);
         void draw() override;
         void setPercentage(int16_t percentage);
@@ -44,6 +45,7 @@ namespace GNSS_RTK_ROVER
     class BTStatusView : public Component 
     {
         public:
+        BTStatusView() {}
         BTStatusView(Canvas* can, Vector2D pos);
         void draw() override;
         void setStatus(bool active);
@@ -55,6 +57,7 @@ namespace GNSS_RTK_ROVER
     class DivisionLineView : public Component 
     {
         public:
+        DivisionLineView() {}
         DivisionLineView(Canvas* can, Vector2D pos);
         void draw() override;
     };
@@ -74,6 +77,7 @@ namespace GNSS_RTK_ROVER
             FixedRTK
         };
 
+        SolutionTypeView() {}
         SolutionTypeView(Canvas* can, Vector2D pos);
         void draw() override;
         void setStatus(SolutionType status);
@@ -92,6 +96,7 @@ namespace GNSS_RTK_ROVER
             Base
         };
 
+        ModeView() {}
         ModeView(Canvas* can, Vector2D pos);
         void draw() override;
         void setOperationalMode(Mode mode);
@@ -104,6 +109,7 @@ namespace GNSS_RTK_ROVER
     class AccuracyView : public Component
     {
         public:
+        AccuracyView() {}
         AccuracyView(Canvas* can, Vector2D pos);
         void draw() override;
         void setAccuracy(float_t acc);
@@ -115,6 +121,7 @@ namespace GNSS_RTK_ROVER
     class VoltageView : public Component
     {
         public:
+        VoltageView() {}
         VoltageView(Canvas* can, Vector2D pos);
         void draw() override;
         void setVoltage(float_t vol);
@@ -126,6 +133,7 @@ namespace GNSS_RTK_ROVER
     class LogoView : public Component
     {
         public:
+        LogoView() {}
         LogoView(Canvas* can, Vector2D pos);
         void draw() override;
     };
