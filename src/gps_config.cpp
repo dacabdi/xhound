@@ -71,18 +71,28 @@ namespace GNSS_RTK_ROVER
         if(!initialized) // Skip if not setup yet
             return;
 
-        auto solType = getSolutionType();
+        auto solType = resolveSolutionType();
         if(solType != currSolutionType)
         {
             currSolutionType = solType;
             onSolutionTypeChanged(currSolutionType);
         }
-        auto mode = getMode();
+        auto mode = resolveMode();
         if(mode != currMode)
         {
             currMode = mode;
             onModeChanged(currMode);
         }
+    }
+
+    GPSConfig::SolutionType GPSConfig::getSolutionType()
+    {
+        return currSolutionType;
+    }
+
+    GPSConfig::Mode GPSConfig::getMode()
+    {
+        return currMode;
     }
 
     void GPSConfig::connect()
@@ -204,7 +214,7 @@ namespace GNSS_RTK_ROVER
         Serial.println("Base Mode Terminated");
     }
 
-    GPSConfig::SolutionType GPSConfig::getSolutionType()
+    GPSConfig::SolutionType GPSConfig::resolveSolutionType()
     {
         if(gps.getDiffSoln())
         {
@@ -236,8 +246,8 @@ namespace GNSS_RTK_ROVER
         return NoFix;
     }
 
-    GPSConfig::Mode GPSConfig::getMode()
-    {
-        return (Mode)gps.svin.active;
+    GPSConfig::Mode GPSConfig::resolveMode()
+    {   
+        return gps.svin.active ? Base : Rover; 
     }
 }

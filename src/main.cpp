@@ -106,6 +106,10 @@ void start()
             Serial.println("Bluetooth disconnected");
             btStatusView.setStatus(false);
             btStatusView.draw();
+            if(GPSConfig::getMode() == GPSConfig::Rover) 
+            {
+                GPSConfig::configureDefault();
+            }
             buzzer.buzzBTDisconnected();
         });
     Serial.println("Finished setting up bluetooth monitor");
