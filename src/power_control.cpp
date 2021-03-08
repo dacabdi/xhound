@@ -103,7 +103,7 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::turnOffPowerModule()
     {
-        onTurnOnOff(onOffState);
+        onTurnOnOff(false);
         detachInterrupt(digitalPinToInterrupt(onOffPin));
         pinMode(onOffPin, OUTPUT);
 

@@ -14,7 +14,7 @@ namespace GNSS_RTK_ROVER
         void buzzPowerOff();
         void buzzCharging();
         void buzzNoCharging();
-
+        void buzzBatteryZero();
         void buzzFixedRTK();
         void buzzFloatRTK();
         void buzzBaseMode();
@@ -44,6 +44,11 @@ namespace GNSS_RTK_ROVER
     inline void Buzzer::buzzNoCharging()
     {
         tone(m_buzzPin, NOTE_D4, 150); delay(200); tone(m_buzzPin, NOTE_C4, 200); delay(250); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzBatteryZero()
+    {
+        tone(m_buzzPin, NOTE_A5, 150); delay(150); tone(m_buzzPin, NOTE_D6, 150); delay(150); noTone(m_buzzPin);
     }
 
     inline void Buzzer::buzzBTConnected()
