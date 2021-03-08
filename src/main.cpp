@@ -32,6 +32,7 @@
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
 #define GPS_UART2_BAUD 115200
+#define BATTERY_DEAD_VOLT 3.70
 
 #define ONOFFPIN 1
 #define CHARGINGPIN 8
@@ -74,7 +75,7 @@ void start()
     delay(1000);
 
     // Display and Views
-    auto display = new DisplaySSD1306(
+    display = new DisplaySSD1306(
         [&](){ // onConnected
             Serial.println("Display connected");
         },
@@ -91,6 +92,20 @@ void start()
         [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
             batteryView->setPercentage(percentage);
             batteryView->draw();
+
+            if(percentage == 0)
+            {
+                onOffLED.set(100, 100);
+            }
+            else 
+            {
+                onOffLED.set(10);
+            }
+
+            if(voltage < BATTERY_DEAD_VOLT) 
+            {
+                CPUPowerController::turnOffPowerModule();
+            }
         },
         [&](){ // onBatteryFull
             if(CPUPowerController::isCharging())
@@ -99,6 +114,9 @@ void start()
         [&](){ // onBatteryNotFull
             if(CPUPowerController::isCharging())
                 batteryLED.set(255, 0);
+        },
+        [&](){ // onBatteryZero
+            buzzer.buzzBatteryZero();
         });
     Serial.println("Finished setting up battery monitor");
 
@@ -183,7 +201,6 @@ void stop()
 {
     BatteryMonitor::start(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
-            Serial.println("Batt Monitor in off routine");
         },
         [&](){ // onBatteryFull
             if(CPUPowerController::isCharging())
@@ -192,6 +209,8 @@ void stop()
         [&](){ // onBatteryNotFull
             if(CPUPowerController::isCharging())
                 batteryLED.set(255, 500);
+        },
+        [&](){ // onBatteryZero
         });
     BluetoothMonitor::stop();
     GPSConfig::stop();
@@ -207,6 +226,13 @@ void stop()
         delay(200);
     }
     onOffLED.set(0);
+
+    delete display;
+    delete logoView;
+    delete divisionLineView;
+    delete batteryView;
+    delete btStatusView;
+    delete solutionTypeView;
 }
 
 void externalPowerConnected()
