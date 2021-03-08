@@ -32,12 +32,14 @@ namespace GNSS_RTK_ROVER
         static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
             std::function<void(SolutionType)> onSolutionTypeChanged, std::function<void(Mode)> onModeChanged);
         static void stop();
+        static SolutionType getSolutionType();
+        static Mode getMode();
         static void checkStatus();
+        static void configureDefault();
 
         private:
         static void connect();
         static void factoryReset();
-        static void configureDefault();
         static void configurePorts();
         static void configureAntenna();
         static void configureForNMEA();
@@ -47,8 +49,8 @@ namespace GNSS_RTK_ROVER
         static void configureAsBase();
         static void configureDisableBase();
 
-        static SolutionType getSolutionType();
-        static Mode getMode();
+        static Mode resolveMode();
+        static SolutionType resolveSolutionType();
             
         static SFE_UBLOX_GPS gps;
         static int serialBaudUart1;
