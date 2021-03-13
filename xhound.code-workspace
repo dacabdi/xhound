@@ -3,6 +3,10 @@
 		{
 			"name": "xhound",
 			"path": "."
+		},
+		{
+			"name": "MKRZero_SDCard",
+			"path": "../MKRZero_SDCard"
 		}
 	],
 	"settings": {

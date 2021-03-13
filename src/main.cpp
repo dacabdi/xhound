@@ -7,6 +7,8 @@
 #include <string> 
 
 #include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
 #include <Wire.h>
 #include <Timer.h>
 #include <Adafruit_GFX.h>
@@ -33,22 +35,42 @@
 #define GPS_UART1_BAUD 115200
 #define GPS_UART2_BAUD 115200
 #define BATTERY_DEAD_VOLT 3.70
+#define SDCARD_CHIP_SELECT SDCARD_SS_PIN
 
+//Input Pins//
+//-------------------------------------------------------------------------------------------------------//
+//Connected to On/Off Pushbutton and On/Off Key off the Power Module in parallel.
 #define ONOFFPIN 1
-#define CHARGINGPIN 8
+//Connected to the LiPo Battery to monitor the Voltage.
 #define BATTERYPIN A1
-
-#define PERIPHERALPOWERPIN 0
-
-#define ONOFF_LEDPIN A3
-#define BATTERY_LEDPIN A4
-#define SPARE_RED 2
-#define SPARE_BLUE 3
-
-#define BUZZERPIN A0
+//Connected to the Power Module Input so we can monitor if there is External Power.
+#define CHARGINGPIN 8 
+//Connected to the Bluetooth Module STATE Pin so we can monitor the state off the Bluetooth Connection. 
 #define BLUETOOTHPIN 7
+//-------------------------------------------------------------------------------------------------------//
+
+//Output Pins
+//-------------------------------------------------------------------------------------------------------//
+//Connected to the input of the Buzzer circuit for audible indications.
+#define BUZZERPIN A0
+//Connected to the anode of the LED1 to indicate the peripherals power state. Also if flashing the Battery is in 0%.
+#define ONOFF_LEDPIN A3
+//Connected to the anode of the LED2 to indicate Charging state and external power presence.
+#define BATTERY_LEDPIN A4
+//
+#define SPARE_RED 2
+//
+#define SPARE_BLUE 3
+//Connected to the Gate of Q1 to power on/off the peripherals.
+#define PERIPHERALPOWERPIN 0
+//-------------------------------------------------------------------------------------------------------//
 
 using namespace GNSS_RTK_ROVER;
+
+Sd2Card sdCard;
+SdVolume sdCardVolume;
+SdFile sdCardRoot;
+File currentFile;
 
 PeripheralPowerController peripheralPower;
 
@@ -252,14 +274,99 @@ void externalPowerDisconnected()
     batteryLED.set(0);
 }
 
+void initSDCard()
+{
+    String sdCardType = "Unknown";
+    String sdCardSize = "SD Card Size: ";
+    String sdCardVolumeType = "SD Card Volume Type: FAT ";
+    uint32_t VolumeSize = 0;
+
+    if (!sdCard.init(SPI_HALF_SPEED,SDCARD_CHIP_SELECT))
+    {
+        Serial.println("SDCard BAD or NOT PRESENT");
+    }
+    else
+    {
+        Serial.println("SD Card Initialized...");
+        switch (sdCard.type())
+        {
+            case SD_CARD_TYPE_SD1:
+            sdCardType = "SD1";
+            break;
+            case SD_CARD_TYPE_SD2:
+            sdCardType = "SD2";
+            break;
+            case SD_CARD_TYPE_SDHC:
+            sdCardType = "SDHC";
+            break;
+        }
+        Serial.print("SD Card type: "); Serial.println(sdCardType);
+        if(!sdCardVolume.init(sdCard))
+        {
+            Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
+        }
+        else
+        {
+            sdCardSize = sdCardSize + sdCard.cardSize()/(2048);
+            Serial.println(sdCardSize + " MB");
+            sdCardVolumeType = sdCardVolumeType + sdCardVolume.fatType();
+            Serial.println(sdCardVolumeType);
+        }
+    }
+}
+
+void sdCardFilesList()
+{
+    Serial.println("-------------------------------------------------------");
+    sdCardRoot.openRoot(sdCardVolume);
+    sdCardRoot.ls(LS_R | LS_DATE | LS_SIZE, 5);
+    Serial.println("-------------------------------------------------------");
+    sdCardRoot.close();
+}
+
+void sdCardFileGet()
+{
+    if(!SD.begin(SDCARD_CHIP_SELECT))
+    {
+        Serial.println("SDCard BAD or NOT PRESENT");
+    }
+    else
+    {
+        SD.remove()
+    }
+}
+
+void readUserInput()
+{
+    int userInput = 255;
+    while(Serial.available())
+    {
+        userInput = Serial.read();
+    }
+    if(userInput != 255)
+    {
+        switch (userInput)
+        {
+            case 49:
+                sdCardFilesList();
+                break;
+            case 50:
+                sdCardFileGet();
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 void setup()
 {
     delay(3000);
-    // I2C and UART 
-    Wire.begin();
-	Serial.begin(MONITOR_SERIAL_BAUD);
+    Wire.begin(); //I2C Init
+	Serial.begin(MONITOR_SERIAL_BAUD); //Serial Init
 	delay(2000);
 	Serial.println("UARTS & I2C Initialized...");
+    initSDCard(); //SD Card Init
 
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
 
@@ -299,9 +406,14 @@ void setup()
 
     Serial.println("Finished Setup");
 	delay(2000);
+    Serial.println("Command Mode");
+    Serial.println("Press 1 to LIST Files on SDCARD");
+    Serial.println("Press 2 to GET Files on SDCARD");
 }
 
 void loop()
 {
     schedule.Update();
+    readUserInput();
 }
+
