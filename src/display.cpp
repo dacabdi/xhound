@@ -50,23 +50,41 @@ namespace GNSS_RTK_ROVER
 
     void DisplaySSD1306::printPixel(uint16_t x, uint16_t y)
     {
-        m_display.setCursor(x, y);
         m_display.drawPixel(x, y, SSD1306_WHITE);
         m_display.display();
     }
 
     void DisplaySSD1306::erasePixel(uint16_t x, uint16_t y)
     {
-        m_display.setCursor(x, y);
         m_display.drawPixel(x, y, SSD1306_BLACK);
-        //m_display.display();
+    }
+
+    void DisplaySSD1306::erase(Vector2D pos, Dimensions2D dim)
+    {
+        for(size_t i = 0; i < dim.width; i++)
+            for(size_t j = 0; j < dim.height; j++)
+                m_display.drawPixel(pos.x + i, pos.y + j, SSD1306_BLACK);
+    }
+
+    void DisplaySSD1306::fill(Vector2D pos, Dimensions2D dim)
+    {
+        for(size_t i = 0; i < dim.width; i++)
+            for(size_t j = 0; j < dim.height; j++)
+                m_display.drawPixel(pos.x + i, pos.y + j, SSD1306_WHITE);
+        m_display.display();
     }
 
     // Only strings less than 16 chars in size
-    void DisplaySSD1306::printText(std::string text, uint16_t x, uint16_t y)
+    void DisplaySSD1306::printText(std::string text, uint16_t x, uint16_t y, Dimensions2D dim, bool highlight)
     {
+        auto color = SSD1306_WHITE;
+        if(highlight)
+        {
+            color = SSD1306_BLACK;
+            this->fill({x, y}, dim);
+        }
         m_display.setTextSize(1);
-        m_display.setTextColor(SSD1306_WHITE);
+        m_display.setTextColor(color);
         m_display.setCursor(x, y);
         for(size_t i = 0 ; i < text.size(); i++) {
             m_display.print(text[i]);

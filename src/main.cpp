@@ -28,6 +28,7 @@
 #include "schedule.h"
 #include "leds.h"
 #include "views.h"
+#include "views_menu.h"
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
@@ -191,6 +192,36 @@ void start()
     delay(3000);
     logoView->clear();
 
+    // Menu list test
+    // auto options = new MenuOptionPtr[5] {
+    //     new MenuOption(display, {0, 0}, "testing 111"),
+    //     new MenuOption(display, {0, 0}, "testing 222"),
+    //     new MenuOption(display, {0, 0}, "testing 333"),
+    //     new MenuOption(display, {0, 0}, "testing 444"),
+    //     new MenuOption(display, {0, 0}, "testing 555"),
+    // };
+
+    // auto menuList = new MenuList(display, {0, 0}, options, 5);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(1);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(2);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(3);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(4);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(0);
+    // menuList->draw();
+    // delay(5000);
+    // delay(10000);
+    // delete menuList;
+
     divisionLineView->draw();
     batteryView->draw();
     btStatusView->draw();
@@ -216,7 +247,7 @@ void stop()
     GPSConfig::stop();
     peripheralPower.turnOff();
     buzzer.buzzPowerOff();
-    
+
     int counter = 2;
     while(counter--)
     {
@@ -255,7 +286,7 @@ void externalPowerDisconnected()
 void setup()
 {
     delay(3000);
-    // I2C and UART 
+    // I2C and UART
     Wire.begin();
 	Serial.begin(MONITOR_SERIAL_BAUD);
 	delay(2000);
@@ -274,11 +305,11 @@ void setup()
             else
             {
                 Serial.println("Turned Off");
-                stop();        
-            }   
+                stop();
+            }
         },
         [&](bool chargingState){
-            if(chargingState) 
+            if(chargingState)
             {
                 Serial.println("External Power Connected");
                 externalPowerConnected();
