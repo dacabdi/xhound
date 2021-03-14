@@ -5,9 +5,9 @@
 
 #include "views.h"
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
-    BatteryView::BatteryView(Canvas* can, Vector2D pos) 
+    BatteryView::BatteryView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{BATTERYVIEW_HEIGHT, BATTERYVIEW_WIDTH}), percentage(-1)
     {
         this->percentageBitmaps[-1] = battery_unknown_9x15;
@@ -24,12 +24,12 @@ namespace GNSS_RTK_ROVER
             this->dimensions.width, this->dimensions.height);
     }
 
-    void BatteryView::setPercentage(int16_t percentage) 
+    void BatteryView::setPercentage(int16_t percentage)
     {
         this->percentage = percentage;
     }
 
-    BTStatusView::BTStatusView(Canvas* can, Vector2D pos) 
+    BTStatusView::BTStatusView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{BTSTATUSVIEW_HEIGHT, BTSTATUSVIEW_WIDTH}), active(false) {}
 
     void BTStatusView::draw()
@@ -45,7 +45,23 @@ namespace GNSS_RTK_ROVER
         this->active = active;
     }
 
-    DivisionLineView::DivisionLineView(Canvas* can, Vector2D pos) 
+    RECStatusView::RECStatusView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{RECSTATUSVIEW_HEIGHT, RECSTATUSVIEW_WIDTH}), active(false) {}
+
+    void RECStatusView::draw()
+    {
+        this->clear();
+        auto bitmap = this->active ? rec_20x15 : norec_20x15;
+        this->canvas->printBitMap(this->position.x, this->position.y, bitmap,
+            this->dimensions.width, this->dimensions.height);
+    }
+
+    void RECStatusView::setStatus(bool active)
+    {
+        this->active = active;
+    }
+
+    DivisionLineView::DivisionLineView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{DIVISIONLINEVIEW_HEIGHT, DIVISIONLINEVIEW_WIDTH}) {}
 
     void DivisionLineView::draw()
@@ -55,7 +71,7 @@ namespace GNSS_RTK_ROVER
             this->dimensions.width, this->dimensions.height);
     }
 
-    SolutionTypeView::SolutionTypeView(Canvas* can, Vector2D pos) 
+    SolutionTypeView::SolutionTypeView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
         this->status = NoFix;
@@ -80,7 +96,7 @@ namespace GNSS_RTK_ROVER
         this->status = status;
     }
 
-    ModeView::ModeView(Canvas* can, Vector2D pos) 
+    ModeView::ModeView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{OPMODEVIEW_HEIGHT, OPMODEVIEW_WIDTH})
     {
         this->modeBitmaps[Mode::Rover] = rover_mode;

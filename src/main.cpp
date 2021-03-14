@@ -4,7 +4,7 @@
 #include <vector>
 #include <functional>
 #include <map>
-#include <string> 
+#include <string>
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -25,6 +25,7 @@
 #include "bitmaps.h"
 #include "battery_monitor.h"
 #include "bluetooth_monitor.h"
+#include "rec_monitor.h"
 #include "schedule.h"
 #include "leds.h"
 #include "views.h"
@@ -63,6 +64,7 @@ LogoView* logoView;
 DivisionLineView* divisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
+RECStatusView* recStatusView;
 SolutionTypeView* solutionTypeView;
 
 Schedule schedule;
@@ -87,6 +89,7 @@ void start()
     divisionLineView = new DivisionLineView(display, {0, 17});
     batteryView = new BatteryView(display, {117, 1});
     btStatusView = new BTStatusView(display, {106, 0});
+    recStatusView = new RECStatusView(display, {84, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
 
     BatteryMonitor::start(BATTERYPIN,
@@ -98,12 +101,12 @@ void start()
             {
                 onOffLED.set(100, 100);
             }
-            else 
+            else
             {
                 onOffLED.set(10);
             }
 
-            if(voltage < BATTERY_DEAD_VOLT) 
+            if(voltage < BATTERY_DEAD_VOLT)
             {
                 CPUPowerController::turnOffPowerModule();
             }
@@ -132,13 +135,26 @@ void start()
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
-            if(GPSConfig::getMode() == GPSConfig::Rover) 
+            if(GPSConfig::getMode() == GPSConfig::Rover)
             {
                 GPSConfig::configureDefault();
             }
             buzzer.buzzBTDisconnected();
         });
     Serial.println("Finished setting up bluetooth monitor");
+
+    RecMonitor::start(BLUETOOTHPIN,
+        [&](){ // onRecording
+            Serial.println("Recording");
+            recStatusView->setStatus(true);
+            recStatusView->draw();
+        },
+        [&](){ // onNotRecording
+            Serial.println("Not Recording");
+            recStatusView->setStatus(false);
+            recStatusView->draw();
+        });
+    Serial.println("Finished setting up recording monitor");
 
     GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
         [&](){ // onConnected
@@ -149,7 +165,7 @@ void start()
         },
         [&](GPSConfig::SolutionType solutionType){
             Serial.print("Solution type: ");
-            switch(solutionType) 
+            switch(solutionType)
             {
                 case GPSConfig::NoFix:
                     solutionTypeView->setStatus(SolutionTypeView::NoFix);
@@ -225,6 +241,7 @@ void start()
     divisionLineView->draw();
     batteryView->draw();
     btStatusView->draw();
+    recStatusView->draw();
     solutionTypeView->draw();
 }
 
@@ -244,6 +261,7 @@ void stop()
         [&](){ // onBatteryZero
         });
     BluetoothMonitor::stop();
+    RecMonitor::stop();
     GPSConfig::stop();
     peripheralPower.turnOff();
     buzzer.buzzPowerOff();
@@ -263,6 +281,7 @@ void stop()
     delete divisionLineView;
     delete batteryView;
     delete btStatusView;
+    delete recStatusView;
     delete solutionTypeView;
 }
 
@@ -326,6 +345,7 @@ void setup()
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
+    schedule.AddEvent(1000, RecMonitor::checkStatus);
     schedule.AddEvent(1000, GPSConfig::checkStatus);
 
     Serial.println("Finished Setup");

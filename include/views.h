@@ -6,11 +6,14 @@
 #define LOGOVIEW_WIDTH 128
 #define LOGOVIEW_HEIGHT 32
 
-#define BATTERYVIEW_WIDTH 9 
+#define BATTERYVIEW_WIDTH 9
 #define BATTERYVIEW_HEIGHT 15
 
-#define BTSTATUSVIEW_WIDTH 11 
+#define BTSTATUSVIEW_WIDTH 11
 #define BTSTATUSVIEW_HEIGHT 15
+
+#define RECSTATUSVIEW_WIDTH 20
+#define RECSTATUSVIEW_HEIGHT 15
 
 #define DIVISIONLINEVIEW_WIDTH 128
 #define DIVISIONLINEVIEW_HEIGHT 1
@@ -29,7 +32,7 @@
 
 namespace GNSS_RTK_ROVER
 {
-    class BatteryView : public Component 
+    class BatteryView : public Component
     {
         public:
         BatteryView() {}
@@ -42,7 +45,7 @@ namespace GNSS_RTK_ROVER
         std::map<int16_t, const uint8_t*> percentageBitmaps;
     };
 
-    class BTStatusView : public Component 
+    class BTStatusView : public Component
     {
         public:
         BTStatusView() {}
@@ -54,7 +57,19 @@ namespace GNSS_RTK_ROVER
         bool active;
     };
 
-    class DivisionLineView : public Component 
+    class RECStatusView : public Component
+    {
+        public:
+        RECStatusView() {}
+        RECStatusView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setStatus(bool active);
+
+        private:
+        bool active;
+    };
+
+    class DivisionLineView : public Component
     {
         public:
         DivisionLineView() {}
@@ -63,7 +78,7 @@ namespace GNSS_RTK_ROVER
     };
 
 
-    class SolutionTypeView : public Component 
+    class SolutionTypeView : public Component
     {
         public:
         enum SolutionType
@@ -100,7 +115,7 @@ namespace GNSS_RTK_ROVER
         ModeView(Canvas* can, Vector2D pos);
         void draw() override;
         void setOperationalMode(Mode mode);
-        
+
         private:
         Mode mode;
         std::map<Mode, const uint8_t*> modeBitmaps;
@@ -113,7 +128,7 @@ namespace GNSS_RTK_ROVER
         AccuracyView(Canvas* can, Vector2D pos);
         void draw() override;
         void setAccuracy(float_t acc);
-        
+
         private:
         float_t accuracy;
     };
@@ -125,7 +140,7 @@ namespace GNSS_RTK_ROVER
         VoltageView(Canvas* can, Vector2D pos);
         void draw() override;
         void setVoltage(float_t vol);
-        
+
         private:
         float_t voltage;
     };
