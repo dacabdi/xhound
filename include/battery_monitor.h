@@ -4,16 +4,19 @@
 #include "Arduino.h"
 
 #define BATTERYPIN A1
-#define VOLTAGEDIVIDER 1.308
-#define AREF 3.28
-#define READ_SAMPLES_COUNT 30
+#define AREF 2.23L
+#define VOLTAGE_DIVIDER 2.00L
+#define CORRECTION_CHARGING -0.06L
+#define CORRECTION_NO_CHARGING -0.05L
+#define READ_SAMPLES_COUNT 100 //How many reads to get an average
+#define BATTERY_DEAD_VOLT 3.60
 
 namespace GNSS_RTK_ROVER
 {
 	class BatteryMonitor
 	{
 		public:
-		static void start(uint8_t batteryPin, std::function<void(float_t, uint8_t)> onPercentageChanged, 
+		static void start(uint8_t batteryPin, std::function<void(float_t, uint8_t)> onPercentageChanged,
 			std::function<void()> onBatteryFull, std::function<void()> onBatteryNotFull, std::function<void()> onBatteryZero);
 		static void stop();
 		static void checkStatus();

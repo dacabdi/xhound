@@ -38,7 +38,7 @@ namespace GNSS_RTK_ROVER
         auto now = millis();
         if(now - powerSwitchLastPressed <= 100) // Debouncer
             return;
-        
+
         Serial.println("OnOff Switch Pressed");
         if(onOffState)
         {
@@ -98,30 +98,17 @@ namespace GNSS_RTK_ROVER
             }
             chargingState = currState;
             onChargingChanged(chargingState);
-        }    
+        }
     }
 
     void CPUPowerController::turnOffPowerModule()
     {
         onTurnOnOff(false);
-        detachInterrupt(digitalPinToInterrupt(onOffPin));
-        pinMode(onOffPin, OUTPUT);
-
-        int counter = 2;
-        while(counter--)
-        {
-            digitalWrite(onOffPin, LOW);
-            delay(100);
-            digitalWrite(onOffPin, HIGH);
-            delay(100);
-        }
-
-        pinMode(onOffPin, INPUT_PULLUP);
-        attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
+        digitalWrite(onOffPin, HIGH);
     }
 
-    void PeripheralPowerController::setup(int powerPin, PinStatus defaultState) 
-    { 
+    void PeripheralPowerController::setup(int powerPin, PinStatus defaultState)
+    {
         m_powerPin = powerPin;
         pinMode(m_powerPin, OUTPUT);
         digitalWrite(m_powerPin, defaultState);

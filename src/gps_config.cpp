@@ -5,7 +5,7 @@
 
 bool is_base_activated = false;
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
     SFE_UBLOX_GPS GPSConfig::gps;
     int GPSConfig::serialBaudUart1;
@@ -41,9 +41,11 @@ namespace GNSS_RTK_ROVER
     {
         gps.factoryDefault();
         configurePorts();
+        configureForNMEA();
         gps.setNavigationFrequency(5);
         configureAntenna();
         gps.saveConfiguration();
+        Serial.println("GNSS just got reconfigured to default settings");
     }
 
     void GPSConfig::configurePorts()
@@ -104,7 +106,7 @@ namespace GNSS_RTK_ROVER
         }
         onConnected();
     }
-    
+
     void GPSConfig::configureForNMEA()
     {
         disableUBXNavMsgs();
@@ -116,16 +118,26 @@ namespace GNSS_RTK_ROVER
     {
         // Enable NMEA Messages
         gps.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
+        Serial.println("Enable UBX_NMEA_GGA");
         // Disable NMEA Messages
         gps.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_GLL");
         gps.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_GNS");
         gps.disableNMEAMessage(UBX_NMEA_GRS, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_GRS");
         gps.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_GSA");
         gps.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_GST");
         gps.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_GSV");
         gps.disableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_ZDA");
         gps.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_VTG");
         gps.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+        Serial.println("Disable UBX_NMEA_RMC");
     }
 
     void GPSConfig::disableUBXNavMsgs()
@@ -165,12 +177,13 @@ namespace GNSS_RTK_ROVER
         gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
         gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_RLM, COM_PORT_UART1);
         gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_RTCM, COM_PORT_UART1);
-        gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1);       
+        gps.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1);
     }
 
     void GPSConfig::factoryReset()
     {
         gps.factoryReset();
+        Serial.println("The GNSS was factory reseted, please change code, reload and restart...");
         delay(5000);
         connect();
     }
@@ -247,7 +260,7 @@ namespace GNSS_RTK_ROVER
     }
 
     GPSConfig::Mode GPSConfig::resolveMode()
-    {   
-        return gps.svin.active ? Base : Rover; 
+    {
+        return gps.svin.active ? Base : Rover;
     }
 }

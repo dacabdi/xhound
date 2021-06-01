@@ -3,8 +3,6 @@
 
 #include "battery_monitor.h"
 
-unsigned long runningTime = 0;
-
 namespace GNSS_RTK_ROVER
 {
     bool BatteryMonitor::initialized = false;
@@ -17,9 +15,9 @@ namespace GNSS_RTK_ROVER
     std::function<void()> BatteryMonitor::onBatteryZero;
 	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
 
-    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, uint8_t)> _onPercentageChanged, 
+    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, uint8_t)> _onPercentageChanged,
         std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull, std::function<void()> _onBatteryZero)
-    { 
+    {
         initialized = true;
         voltage = 0;
         percentage = -1;
@@ -33,7 +31,7 @@ namespace GNSS_RTK_ROVER
     }
 
     void BatteryMonitor::stop()
-    { 
+    {
         initialized = false;
     }
 
@@ -59,11 +57,10 @@ namespace GNSS_RTK_ROVER
             percentage = new_percentage;
             onPercentageChanged(voltage, percentage);
         }
-        
-        runningTime = millis();
-        Serial.print("Running Time = "); Serial.print(runningTime/60000); Serial.print(" min");Serial.print(" --- ");
-        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.print(" V"); 
-        Serial.print(" --- ("); Serial.print(percentage); Serial.println("%)"); 
+
+        Serial.print("Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
+        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.print(" V");
+        Serial.print(" --- ("); Serial.print(percentage); Serial.println("%)");
     }
 
     void BatteryMonitor::setChargingState(bool state)
@@ -91,23 +88,35 @@ namespace GNSS_RTK_ROVER
         auto voltageReading = 0;
         for (int i = 0; i < READ_SAMPLES_COUNT; i++)
         {
-            voltageReading = (voltageReading + analogRead(batteryPin) / READ_SAMPLES_COUNT);
+            voltageReading = voltageReading + analogRead(BATTERYPIN);
         }
-        auto readVoltage = (VOLTAGEDIVIDER * AREF * voltageReading)/1024;
+        voltageReading = voltageReading / READ_SAMPLES_COUNT;
+
+        float readVoltage = 0;
+        if(isCharging)
+        {
+            readVoltage = ((voltageReading * AREF * VOLTAGE_DIVIDER) / 1023) +  CORRECTION_CHARGING;
+        }
+            else
+        {
+            readVoltage = ((voltageReading * AREF * VOLTAGE_DIVIDER) / 1023) +  CORRECTION_NO_CHARGING;
+        }
+
+        Serial.print("Running Time = "); Serial.print(millis()/1000); Serial.print(" sec");Serial.print(" --- "); Serial.print("  Voltage = "); Serial.println(readVoltage);
 
         if(!validateVoltageReading(readVoltage))
         {
             return false;
         }
-        
-        voltage = readVoltage;    
+
+        voltage = readVoltage;
         return true;
     }
 
     bool BatteryMonitor::validateVoltageReading(float_t readVoltage)
     {
         auto delta = readVoltage - voltage;
-        if(abs(delta) <= 0.03)
+        if(abs(delta) < 0.00)
             return false;
         return true;
     }
@@ -116,22 +125,22 @@ namespace GNSS_RTK_ROVER
     {
         if(isCharging)
         {
-            if(voltage > 4.12)
+            if(voltage >= 4.15)
                 return 100;
-            else if(voltage > 3.92)
+            else if(voltage >= 3.90)
                 return 66;
-            else if(voltage > 3.78)
+            else if(voltage >= 3.78)
                 return 33;
             else
                 return 0;
         }
         else
         {
-            if(voltage > 3.92)
+            if(voltage >= 3.90)
                 return 100;
-            else if(voltage > 3.78)
+            else if(voltage >= 3.75)
                 return 66;
-            else if(voltage > 3.73)
+            else if(voltage >= 3.61)
                 return 33;
             else
                 return 0;

@@ -34,10 +34,9 @@
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
 #define GPS_UART2_BAUD 115200
-#define BATTERY_DEAD_VOLT 3.70
 
-#define ONOFFPIN 1
-#define CHARGINGPIN 8
+#define MAINPOWERPIN A2
+#define CHARGINGPIN 7
 #define BATTERYPIN A1
 
 #define PERIPHERALPOWERPIN 0
@@ -48,7 +47,7 @@
 #define SPARE_BLUE 3
 
 #define BUZZERPIN A0
-#define BLUETOOTHPIN 7
+#define BLUETOOTHPIN 6
 
 using namespace GNSS_RTK_ROVER;
 
@@ -73,6 +72,7 @@ void start()
 {
     onOffLED.set(5);
     buzzer.buzzPowerOn();
+    analogWrite(MAINPOWERPIN, 0); // Gate of MainPower MOSFET to LOW to hold POWER ON
 
     peripheralPower.turnOn();
     delay(1000);
@@ -85,12 +85,12 @@ void start()
         [&](){ // onTryingConnection
             Serial.println("Display not connected. Trying...");
         });
-    logoView = new LogoView(display, {0, 0});
-    divisionLineView = new DivisionLineView(display, {0, 17});
-    batteryView = new BatteryView(display, {117, 1});
-    btStatusView = new BTStatusView(display, {106, 0});
-    recStatusView = new RECStatusView(display, {84, 0});
-    solutionTypeView = new SolutionTypeView(display, {0, 0});
+    logoView = new LogoView(display, {3, 0});
+    divisionLineView = new DivisionLineView(display, {3, 17});
+    batteryView = new BatteryView(display, {120, 1});
+    btStatusView = new BTStatusView(display, {109, 0});
+    recStatusView = new RECStatusView(display, {87, 0});
+    solutionTypeView = new SolutionTypeView(display, {3, 0});
 
     BatteryMonitor::start(BATTERYPIN,
         [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
@@ -159,6 +159,7 @@ void start()
     GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
         [&](){ // onConnected
             Serial.println("GPS connected");
+            GPSConfig::configureDefault();
         },
         [&](){ // onTryingConnection
             Serial.println("GPS not connected. Trying...");
@@ -265,7 +266,6 @@ void stop()
     GPSConfig::stop();
     peripheralPower.turnOff();
     buzzer.buzzPowerOff();
-
     int counter = 2;
     while(counter--)
     {
@@ -304,17 +304,19 @@ void externalPowerDisconnected()
 
 void setup()
 {
-    delay(3000);
+    analogReadResolution(10);
+    analogReference(AR_INTERNAL2V23);
+    delay(250);
+
     // I2C and UART
     Wire.begin();
 	Serial.begin(MONITOR_SERIAL_BAUD);
 	delay(2000);
 	Serial.println("UARTS & I2C Initialized...");
-
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
-
     Serial.println("Setting up power control");
-    CPUPowerController::setup(ONOFFPIN, CHARGINGPIN,
+
+    CPUPowerController::setup(MAINPOWERPIN, CHARGINGPIN,
         [&](bool onOffState){ // onTurnOnOff
             if(onOffState)
             {
@@ -332,11 +334,13 @@ void setup()
             {
                 Serial.println("External Power Connected");
                 externalPowerConnected();
+                pinMode(MAINPOWERPIN, INPUT);  //Pin to High Z when External Power is connected so Q4 drives the Gate of Q1.
             }
             else
             {
                 Serial.println("External Power Disconnected");
                 externalPowerDisconnected();
+                pinMode(MAINPOWERPIN, OUTPUT); //Pin to OUTPUT when External Power is NOT connected so this pin drives the Gate of Q1.
             }
         });
 
@@ -345,7 +349,6 @@ void setup()
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
-    schedule.AddEvent(1000, RecMonitor::checkStatus);
     schedule.AddEvent(1000, GPSConfig::checkStatus);
 
     Serial.println("Finished Setup");
