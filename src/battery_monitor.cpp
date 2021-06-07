@@ -13,10 +13,12 @@ namespace GNSS_RTK_ROVER
     std::function<void()> BatteryMonitor::onBatteryFull;
     std::function<void()> BatteryMonitor::onBatteryNotFull;
     std::function<void()> BatteryMonitor::onBatteryZero;
+    std::function<void()> BatteryMonitor::onBatteryDead;
 	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
 
     void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, uint8_t)> _onPercentageChanged,
-        std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull, std::function<void()> _onBatteryZero)
+        std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull,
+        std::function<void()> _onBatteryZero, std::function<void()> _onBatteryDead)
     {
         initialized = true;
         voltage = 0;
@@ -28,6 +30,7 @@ namespace GNSS_RTK_ROVER
         onBatteryNotFull = _onBatteryNotFull;
         onBatteryZero = _onBatteryZero;
         onPercentageChanged = _onPercentageChanged;
+        onBatteryDead = _onBatteryDead;
     }
 
     void BatteryMonitor::stop()
@@ -45,6 +48,9 @@ namespace GNSS_RTK_ROVER
 
         if(!readAndCalculateVoltage() && percentage != -1)
             return;
+
+        if(voltage < BATTERY_DEAD_VOLT)
+            onBatteryDead();
 
         auto new_percentage = calculatePercentage();
         if(new_percentage != percentage)
@@ -116,7 +122,7 @@ namespace GNSS_RTK_ROVER
     bool BatteryMonitor::validateVoltageReading(float_t readVoltage)
     {
         auto delta = readVoltage - voltage;
-        if(abs(delta) < 0.00)
+        if(abs(delta) < 0.02)
             return false;
         return true;
     }

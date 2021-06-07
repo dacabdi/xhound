@@ -35,6 +35,7 @@
 #define GPS_UART1_BAUD 115200
 #define GPS_UART2_BAUD 115200
 
+#define ONOFFPIN 1
 #define MAINPOWERPIN A2
 #define CHARGINGPIN 7
 #define BATTERYPIN A1
@@ -72,8 +73,6 @@ void start()
 {
     onOffLED.set(5);
     buzzer.buzzPowerOn();
-    analogWrite(MAINPOWERPIN, 0); // Gate of MainPower MOSFET to LOW to hold POWER ON
-
     peripheralPower.turnOn();
     delay(1000);
 
@@ -105,11 +104,6 @@ void start()
             {
                 onOffLED.set(10);
             }
-
-            if(voltage < BATTERY_DEAD_VOLT)
-            {
-                CPUPowerController::turnOffPowerModule();
-            }
         },
         [&](){ // onBatteryFull
             if(CPUPowerController::isCharging())
@@ -121,6 +115,9 @@ void start()
         },
         [&](){ // onBatteryZero
             buzzer.buzzBatteryZero();
+        },
+        [&](){ //onBatteryDead
+            CPUPowerController::turnOff();
         });
     Serial.println("Finished setting up battery monitor");
 
@@ -260,6 +257,8 @@ void stop()
                 batteryLED.set(255, 500);
         },
         [&](){ // onBatteryZero
+        },
+        [&](){ // onBatteryDead
         });
     BluetoothMonitor::stop();
     RecMonitor::stop();
@@ -316,7 +315,7 @@ void setup()
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
     Serial.println("Setting up power control");
 
-    CPUPowerController::setup(MAINPOWERPIN, CHARGINGPIN,
+    CPUPowerController::setup(ONOFFPIN, MAINPOWERPIN, CHARGINGPIN,
         [&](bool onOffState){ // onTurnOnOff
             if(onOffState)
             {
@@ -334,13 +333,11 @@ void setup()
             {
                 Serial.println("External Power Connected");
                 externalPowerConnected();
-                pinMode(MAINPOWERPIN, INPUT);  //Pin to High Z when External Power is connected so Q4 drives the Gate of Q1.
             }
             else
             {
                 Serial.println("External Power Disconnected");
                 externalPowerDisconnected();
-                pinMode(MAINPOWERPIN, OUTPUT); //Pin to OUTPUT when External Power is NOT connected so this pin drives the Gate of Q1.
             }
         });
 

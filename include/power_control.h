@@ -8,19 +8,21 @@ namespace GNSS_RTK_ROVER
     class CPUPowerController
     {
         public:
-        static void setup(int onOffPin, int chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged);
+        static void setup(int onOffPin, int mainPowerPin, int chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged);
         static bool isCharging();
         static void checkOnOffStatus();
         static void checkCharging();
-        static void turnOffPowerModule();
+        static void turnOn();
+        static void turnOff();
 
         private:
         CPUPowerController();
-        static void turnOn();
-        static void turnOff();
+        static void turnOnPowerModule();
+        static void turnOffPowerModule();
         static void onOffSwitcher();
 
         static int onOffPin;
+        static int mainPowerPin;
         static int chargingStatePin;
         static bool onOffState;
         static bool chargingState;

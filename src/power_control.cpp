@@ -5,6 +5,7 @@
 namespace GNSS_RTK_ROVER
 {
     int CPUPowerController::onOffPin;
+    int CPUPowerController::mainPowerPin;
     bool CPUPowerController::onOffState;
     int CPUPowerController::chargingStatePin;
     bool CPUPowerController::chargingState;
@@ -13,9 +14,14 @@ namespace GNSS_RTK_ROVER
     std::function<void(bool)> CPUPowerController::onTurnOnOff;
     std::function<void(bool)> CPUPowerController::onChargingChanged;
 
-    void CPUPowerController::setup(int _onOffPin, int _chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged)
+    void CPUPowerController::setup(int _onOffPin, int _mainPowerPin, int _chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged)
     {
+        mainPowerPin = _mainPowerPin;
+        pinMode(mainPowerPin, OUTPUT);
+        turnOnPowerModule();
+
         onOffPin = _onOffPin;
+        pinMode(onOffPin, INPUT_PULLUP);
         chargingStatePin = _chargingStatePin;
         pinMode(chargingStatePin, INPUT);
 
@@ -24,8 +30,7 @@ namespace GNSS_RTK_ROVER
         onTurnOnOff = _onTurnOnOff;
         onChargingChanged = _onChargingChanged;
         justChangedOnOff = false;
-        pinMode(onOffPin, INPUT_PULLUP);
-        attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, RISING);
+        attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, FALLING);
 
         if(!isCharging())
             turnOn();
@@ -72,6 +77,7 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::turnOn()
     {
+        pinMode(mainPowerPin, OUTPUT);
         onOffState = true;
         onTurnOnOff(onOffState);
     }
@@ -80,6 +86,7 @@ namespace GNSS_RTK_ROVER
     {
         onOffState = false;
         onTurnOnOff(onOffState);
+        turnOffPowerModule();
     }
 
     bool CPUPowerController::isCharging()
@@ -92,19 +99,19 @@ namespace GNSS_RTK_ROVER
         auto currState = isCharging();
         if(currState != chargingState)
         {
-            if(!currState && !onOffState)
-            {
-                turnOffPowerModule();
-            }
             chargingState = currState;
             onChargingChanged(chargingState);
         }
     }
 
+    void CPUPowerController::turnOnPowerModule()
+    {
+        digitalWrite(mainPowerPin, LOW);
+    }
+
     void CPUPowerController::turnOffPowerModule()
     {
-        onTurnOnOff(false);
-        digitalWrite(onOffPin, HIGH);
+        pinMode(mainPowerPin, INPUT); // set pin in High-Z mode
     }
 
     void PeripheralPowerController::setup(int powerPin, PinStatus defaultState)
