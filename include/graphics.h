@@ -24,14 +24,14 @@ namespace GNSS_RTK_ROVER
         virtual Dimensions2D getDimensions() = 0;
         virtual void display() = 0;
         virtual void clear() = 0;
-        virtual void printPixel(uint16_t x, uint16_t y) = 0;
-        virtual void erasePixel(uint16_t x, uint16_t y) = 0;
+        virtual void printPixel(Vector2D pos) = 0;
+        virtual void erasePixel(Vector2D pos) = 0;
         virtual void erase(Vector2D pos, Dimensions2D dim) = 0;
         virtual void fill(Vector2D pos, Dimensions2D dim) = 0;
-        virtual void printText(std::string text, uint16_t x, uint16_t y, Dimensions2D dim = {0, 0}, bool highlight = false) = 0;
-        virtual void printFloatVariable(std::float_t float_variable, uint16_t x, uint16_t y) = 0;
+        virtual void printText(std::string text, Vector2D pos, Dimensions2D dim = {0, 0}, bool highlight = false) = 0;
+        virtual void printFloatVariable(std::float_t float_variable, Vector2D pos) = 0;
         virtual void printTextInRect(std::string text) = 0;
-        virtual void printBitMap(uint16_t x, uint16_t y, const uint8_t bitmap[], uint16_t w, uint16_t h) = 0;
+        virtual void printBitMap(Vector2D pos, Dimensions2D dim, const uint8_t bitmap[]) = 0;
     };
 
     class Component

@@ -15,7 +15,7 @@ namespace GNSS_RTK_ROVER
     void MenuOption::draw()
     {
         this->clear();
-        this->canvas->printText(this->text, this->position.x, this->position.y, this->dimensions, this->selected);
+        this->canvas->printText(this->text, {this->position.x, this->position.y}, this->dimensions, this->selected);
     }
 
     void MenuOption::select() { this->selected = true; }

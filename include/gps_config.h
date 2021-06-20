@@ -8,6 +8,8 @@ namespace GNSS_RTK_ROVER
     class GPSConfig
     {
         public:
+        static void WakeUp();
+        static void Sleep();
         enum SolutionType
         {
             UnknownSolutionType,

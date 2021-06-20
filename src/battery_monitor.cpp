@@ -7,29 +7,27 @@ namespace GNSS_RTK_ROVER
 {
     bool BatteryMonitor::initialized = false;
     bool BatteryMonitor::isCharging = false;
-    int8_t BatteryMonitor::percentage;
+    bool BatteryMonitor::batteryFull = false;
 	float_t BatteryMonitor::voltage;
 	int8_t BatteryMonitor::batteryPin;
     std::function<void()> BatteryMonitor::onBatteryFull;
     std::function<void()> BatteryMonitor::onBatteryNotFull;
-    std::function<void()> BatteryMonitor::onBatteryZero;
     std::function<void()> BatteryMonitor::onBatteryDead;
-	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
+	std::function<void(float_t, bool)> BatteryMonitor::onVoltageChanged;
 
-    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, uint8_t)> _onPercentageChanged,
+    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, bool)> _onVoltageChanged,
         std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull,
-        std::function<void()> _onBatteryZero, std::function<void()> _onBatteryDead)
+        std::function<void()> _onBatteryDead)
     {
         initialized = true;
+        batteryFull = false;
         voltage = 0;
-        percentage = -1;
         batteryPin = _batteryPin;
         pinMode(batteryPin, INPUT);
 
         onBatteryFull = _onBatteryFull;
         onBatteryNotFull = _onBatteryNotFull;
-        onBatteryZero = _onBatteryZero;
-        onPercentageChanged = _onPercentageChanged;
+        onVoltageChanged = _onVoltageChanged;
         onBatteryDead = _onBatteryDead;
     }
 
@@ -43,50 +41,49 @@ namespace GNSS_RTK_ROVER
         if(!initialized)  // Skip if not setup yet
             return;
 
-        if(percentage == 0)
-            onBatteryZero();
-
-        if(!readAndCalculateVoltage() && percentage != -1)
+        if(!readAndCalculateVoltage() && voltage != 0)
             return;
 
         if(voltage < BATTERY_DEAD_VOLT)
             onBatteryDead();
 
-        auto new_percentage = calculatePercentage();
-        if(new_percentage != percentage)
+        if(!batteryFull || !isCharging || voltage < 4.00)
         {
-            if(new_percentage == 100)
-                onBatteryFull();
-            else if(percentage == 100)
-                onBatteryNotFull();
-
-            percentage = new_percentage;
-            onPercentageChanged(voltage, percentage);
+            onVoltageChanged(voltage, isCharging);
+        }
+        if(voltage >= 4.15 && !batteryFull)
+        {
+            batteryFull = true;
+            onBatteryFull();
+        }
+        if(voltage < 4.15 && batteryFull && (!isCharging || voltage < 4.00))
+        {
+            batteryFull = false;
+            onBatteryNotFull();
         }
 
-        Serial.print("Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
-        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.print(" V");
-        Serial.print(" --- ("); Serial.print(percentage); Serial.println("%)");
+        Serial.print("Valid:  Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
+        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
     }
 
     void BatteryMonitor::setChargingState(bool state)
     {
+        if(!state)
+        {
+            batteryFull = false;
+        }
         isCharging = state;
+        onVoltageChanged(voltage, isCharging);
     }
 
     bool BatteryMonitor::isBatteryFull()
     {
-        return percentage == 100;
+        return batteryFull;
     }
 
     float_t BatteryMonitor::getVoltage()
     {
         return voltage;
-    }
-
-    uint8_t BatteryMonitor::getDiscretePercentage()
-    {
-        return percentage;
     }
 
     bool BatteryMonitor::readAndCalculateVoltage()
@@ -108,7 +105,8 @@ namespace GNSS_RTK_ROVER
             readVoltage = ((voltageReading * AREF * VOLTAGE_DIVIDER) / 1023) +  CORRECTION_NO_CHARGING;
         }
 
-        Serial.print("Running Time = "); Serial.print(millis()/1000); Serial.print(" sec");Serial.print(" --- "); Serial.print("  Voltage = "); Serial.println(readVoltage);
+        Serial.print("Running Time = "); Serial.print(millis()/1000); Serial.print(" sec");Serial.print(" --- ");
+        Serial.print("Battery Voltage = "); Serial.print(readVoltage); Serial.println(" V");
 
         if(!validateVoltageReading(readVoltage))
         {
@@ -127,7 +125,7 @@ namespace GNSS_RTK_ROVER
         return true;
     }
 
-	uint8_t BatteryMonitor::calculatePercentage()
+    uint8_t BatteryPercentageProvider::getBatteryPercentage(float voltage, bool isCharging)
     {
         if(isCharging)
         {

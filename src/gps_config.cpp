@@ -42,10 +42,42 @@ namespace GNSS_RTK_ROVER
         gps.factoryDefault();
         configurePorts();
         configureForNMEA();
-        gps.setNavigationFrequency(5);
+        gps.setNavigationFrequency(1);
         configureAntenna();
         gps.saveConfiguration();
+        delay(1000);
+        Serial.print("GNSS Protocol version: "); Serial.print(gps.getProtocolVersionHigh()); Serial.print("."); Serial.println(gps.getProtocolVersionLow());
         Serial.println("GNSS just got reconfigured to default settings");
+    }
+
+    void GPSConfig::Sleep()
+    {
+        gps.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX);
+        Serial.println("GNSS is SLEEPING ...");
+    }
+
+    void GPSConfig::WakeUp()
+    {
+        while(gps.getDateValid() == 0)
+        {
+            Serial.println("GNSS is waking up ...");
+            delay(10);
+        }
+        Serial.println("GNSS is AWAKE ...");
+        Serial.print("Date & Time: ");
+        Serial.print(gps.getYear());
+        Serial.print("-");
+        Serial.print(gps.getMonth());
+        Serial.print("-");
+        Serial.print(gps.getDay());
+        Serial.print(" ");
+        Serial.print(gps.getHour());
+        Serial.print(":");
+        Serial.print(gps.getMinute());
+        Serial.print(":");
+        Serial.print(gps.getSecond());
+        Serial.print(" UTC");
+        Serial.println();
     }
 
     void GPSConfig::configurePorts()
