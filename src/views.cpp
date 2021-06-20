@@ -5,9 +5,9 @@
 
 #include "views.h"
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
-    BatteryView::BatteryView(Canvas* can, Vector2D pos) 
+    BatteryView::BatteryView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{BATTERYVIEW_HEIGHT, BATTERYVIEW_WIDTH}), percentage(-1)
     {
         this->percentageBitmaps[-1] = battery_unknown_9x15;
@@ -20,24 +20,22 @@ namespace GNSS_RTK_ROVER
     void BatteryView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, this->percentageBitmaps[this->percentage],
-            this->dimensions.width, this->dimensions.height);
+        this->canvas->printBitMap(this->position, this->dimensions, this->percentageBitmaps[this->percentage]);
     }
 
-    void BatteryView::setPercentage(int16_t percentage) 
+    void BatteryView::setPercentage(int16_t percentage)
     {
         this->percentage = percentage;
     }
 
-    BTStatusView::BTStatusView(Canvas* can, Vector2D pos) 
+    BTStatusView::BTStatusView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{BTSTATUSVIEW_HEIGHT, BTSTATUSVIEW_WIDTH}), active(false) {}
 
     void BTStatusView::draw()
     {
         this->clear();
         auto bitmap = this->active ? bt_on_11x15 : bt_off_11x15;
-        this->canvas->printBitMap(this->position.x, this->position.y, bitmap,
-            this->dimensions.width, this->dimensions.height);
+        this->canvas->printBitMap(this->position, this->dimensions, bitmap);
     }
 
     void BTStatusView::setStatus(bool active)
@@ -45,17 +43,31 @@ namespace GNSS_RTK_ROVER
         this->active = active;
     }
 
-    DivisionLineView::DivisionLineView(Canvas* can, Vector2D pos) 
+    RECStatusView::RECStatusView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{RECSTATUSVIEW_HEIGHT, RECSTATUSVIEW_WIDTH}), active(false) {}
+
+    void RECStatusView::draw()
+    {
+        this->clear();
+        auto bitmap = this->active ? rec_20x15 : norec_20x15;
+        this->canvas->printBitMap(this->position, this->dimensions, bitmap);
+    }
+
+    void RECStatusView::setStatus(bool active)
+    {
+        this->active = active;
+    }
+
+    DivisionLineView::DivisionLineView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{DIVISIONLINEVIEW_HEIGHT, DIVISIONLINEVIEW_WIDTH}) {}
 
     void DivisionLineView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, division_line_h_128x1,
-            this->dimensions.width, this->dimensions.height);
+        this->canvas->printBitMap(this->position, this->dimensions, division_line_h_128x1);
     }
 
-    SolutionTypeView::SolutionTypeView(Canvas* can, Vector2D pos) 
+    SolutionTypeView::SolutionTypeView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
         this->status = NoFix;
@@ -71,8 +83,7 @@ namespace GNSS_RTK_ROVER
     void SolutionTypeView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, this->statusBitmaps[this->status],
-            this->dimensions.width, this->dimensions.height);
+        this->canvas->printBitMap(this->position, this->dimensions, this->statusBitmaps[this->status]);
     }
 
     void SolutionTypeView::setStatus(SolutionType status)
@@ -80,7 +91,7 @@ namespace GNSS_RTK_ROVER
         this->status = status;
     }
 
-    ModeView::ModeView(Canvas* can, Vector2D pos) 
+    ModeView::ModeView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{OPMODEVIEW_HEIGHT, OPMODEVIEW_WIDTH})
     {
         this->modeBitmaps[Mode::Rover] = rover_mode;
@@ -90,8 +101,7 @@ namespace GNSS_RTK_ROVER
     void ModeView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, this->modeBitmaps[this->mode],
-            this->dimensions.width, this->dimensions.height);
+        this->canvas->printBitMap(this->position, this->dimensions, this->modeBitmaps[this->mode]);
     }
 
     void ModeView::setOperationalMode(Mode mode)
@@ -99,7 +109,7 @@ namespace GNSS_RTK_ROVER
         this->mode = mode;
     }
 
-    AccuracyView::AccuracyView(Canvas* can, Vector2D pos) 
+    AccuracyView::AccuracyView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{ACCURACYVIEW_HEIGHT, ACCURACYVIEW_WIDTH}), accuracy(10) {} // everything grater or equal 10 is considered > 9.99
 
     void AccuracyView::draw()
@@ -108,13 +118,13 @@ namespace GNSS_RTK_ROVER
         if(this->accuracy > 9.99)
         {
             float_t acc = 9.99;
-            this->canvas->printText("Accu > ", this->position.x, this->position.y);
-            this->canvas->printFloatVariable(acc, this->position.x + 42, this->position.y);
+            this->canvas->printText("Accu > ", {this->position.x, this->position.y});
+            this->canvas->printFloatVariable(acc, {this->position.x + 42, this->position.y});
         }
         else
         {
-            this->canvas->printText("Accu = ", this->position.x, this->position.y);
-            this->canvas->printFloatVariable(this->accuracy, this->position.x + 42, this->position.y);
+            this->canvas->printText("Accu = ", {this->position.x, this->position.y});
+            this->canvas->printFloatVariable(this->accuracy, {this->position.x + 42, this->position.y});
         }
     }
 
@@ -123,14 +133,14 @@ namespace GNSS_RTK_ROVER
         this->accuracy = acc;
     }
 
-    VoltageView::VoltageView(Canvas* can, Vector2D pos) 
+    VoltageView::VoltageView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{VOLTAGEVIEW_HEIGHT, VOLTAGEVIEW_WIDTH}), voltage(-1) {}
 
     void VoltageView::draw()
     {
-        this->clear();        
-        this->canvas->printText("VBat = ", this->position.x, this->position.y);
-        this->canvas->printFloatVariable(this->voltage, this->position.x + 42, this->position.y);
+        this->clear();
+        this->canvas->printText("VBat = ", {this->position.x, this->position.y});
+        this->canvas->printFloatVariable(this->voltage, {this->position.x + 42, this->position.y});
     }
 
     void VoltageView::setVoltage(float_t vol)
@@ -144,7 +154,6 @@ namespace GNSS_RTK_ROVER
     void LogoView::draw()
     {
         this->clear();
-        this->canvas->printBitMap(this->position.x, this->position.y, logo_128x32,
-            this->dimensions.width, this->dimensions.height);
+        this->canvas->printBitMap(this->position, this->dimensions, logo_128x32);
     }
 }

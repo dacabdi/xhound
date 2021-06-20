@@ -3,37 +3,36 @@
 
 #include "battery_monitor.h"
 
-unsigned long runningTime = 0;
-
 namespace GNSS_RTK_ROVER
 {
     bool BatteryMonitor::initialized = false;
     bool BatteryMonitor::isCharging = false;
-    int8_t BatteryMonitor::percentage;
+    bool BatteryMonitor::batteryFull = false;
 	float_t BatteryMonitor::voltage;
 	int8_t BatteryMonitor::batteryPin;
     std::function<void()> BatteryMonitor::onBatteryFull;
     std::function<void()> BatteryMonitor::onBatteryNotFull;
-    std::function<void()> BatteryMonitor::onBatteryZero;
-	std::function<void(float_t, uint8_t)> BatteryMonitor::onPercentageChanged;
+    std::function<void()> BatteryMonitor::onBatteryDead;
+	std::function<void(float_t, bool)> BatteryMonitor::onVoltageChanged;
 
-    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, uint8_t)> _onPercentageChanged, 
-        std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull, std::function<void()> _onBatteryZero)
-    { 
+    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, bool)> _onVoltageChanged,
+        std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull,
+        std::function<void()> _onBatteryDead)
+    {
         initialized = true;
+        batteryFull = false;
         voltage = 0;
-        percentage = -1;
         batteryPin = _batteryPin;
         pinMode(batteryPin, INPUT);
 
         onBatteryFull = _onBatteryFull;
         onBatteryNotFull = _onBatteryNotFull;
-        onBatteryZero = _onBatteryZero;
-        onPercentageChanged = _onPercentageChanged;
+        onVoltageChanged = _onVoltageChanged;
+        onBatteryDead = _onBatteryDead;
     }
 
     void BatteryMonitor::stop()
-    { 
+    {
         initialized = false;
     }
 
@@ -42,38 +41,44 @@ namespace GNSS_RTK_ROVER
         if(!initialized)  // Skip if not setup yet
             return;
 
-        if(percentage == 0)
-            onBatteryZero();
-
-        if(!readAndCalculateVoltage() && percentage != -1)
+        if(!readAndCalculateVoltage() && voltage != 0)
             return;
 
-        auto new_percentage = calculatePercentage();
-        if(new_percentage != percentage)
-        {
-            if(new_percentage == 100)
-                onBatteryFull();
-            else if(percentage == 100)
-                onBatteryNotFull();
+        if(voltage < BATTERY_DEAD_VOLT)
+            onBatteryDead();
 
-            percentage = new_percentage;
-            onPercentageChanged(voltage, percentage);
+        if(!batteryFull || !isCharging || voltage < 4.00)
+        {
+            onVoltageChanged(voltage, isCharging);
         }
-        
-        runningTime = millis();
-        Serial.print("Running Time = "); Serial.print(runningTime/60000); Serial.print(" min");Serial.print(" --- ");
-        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.print(" V"); 
-        Serial.print(" --- ("); Serial.print(percentage); Serial.println("%)"); 
+        if(voltage >= 4.15 && !batteryFull)
+        {
+            batteryFull = true;
+            onBatteryFull();
+        }
+        if(voltage < 4.15 && batteryFull && (!isCharging || voltage < 4.00))
+        {
+            batteryFull = false;
+            onBatteryNotFull();
+        }
+
+        Serial.print("Valid:  Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
+        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
     }
 
     void BatteryMonitor::setChargingState(bool state)
     {
+        if(!state)
+        {
+            batteryFull = false;
+        }
         isCharging = state;
+        onVoltageChanged(voltage, isCharging);
     }
 
     bool BatteryMonitor::isBatteryFull()
     {
-        return percentage == 100;
+        return batteryFull;
     }
 
     float_t BatteryMonitor::getVoltage()
@@ -81,57 +86,65 @@ namespace GNSS_RTK_ROVER
         return voltage;
     }
 
-    uint8_t BatteryMonitor::getDiscretePercentage()
-    {
-        return percentage;
-    }
-
     bool BatteryMonitor::readAndCalculateVoltage()
     {
         auto voltageReading = 0;
         for (int i = 0; i < READ_SAMPLES_COUNT; i++)
         {
-            voltageReading = (voltageReading + analogRead(batteryPin) / READ_SAMPLES_COUNT);
+            voltageReading = voltageReading + analogRead(BATTERYPIN);
         }
-        auto readVoltage = (VOLTAGEDIVIDER * AREF * voltageReading)/1024;
+        voltageReading = voltageReading / READ_SAMPLES_COUNT;
+
+        float readVoltage = 0;
+        if(isCharging)
+        {
+            readVoltage = ((voltageReading * AREF * VOLTAGE_DIVIDER) / 1023) +  CORRECTION_CHARGING;
+        }
+            else
+        {
+            readVoltage = ((voltageReading * AREF * VOLTAGE_DIVIDER) / 1023) +  CORRECTION_NO_CHARGING;
+        }
+
+        Serial.print("Running Time = "); Serial.print(millis()/1000); Serial.print(" sec");Serial.print(" --- ");
+        Serial.print("Battery Voltage = "); Serial.print(readVoltage); Serial.println(" V");
 
         if(!validateVoltageReading(readVoltage))
         {
             return false;
         }
-        
-        voltage = readVoltage;    
+
+        voltage = readVoltage;
         return true;
     }
 
     bool BatteryMonitor::validateVoltageReading(float_t readVoltage)
     {
         auto delta = readVoltage - voltage;
-        if(abs(delta) <= 0.03)
+        if(abs(delta) < 0.02)
             return false;
         return true;
     }
 
-	uint8_t BatteryMonitor::calculatePercentage()
+    uint8_t BatteryPercentageProvider::getBatteryPercentage(float voltage, bool isCharging)
     {
         if(isCharging)
         {
-            if(voltage > 4.12)
+            if(voltage >= 4.15)
                 return 100;
-            else if(voltage > 3.92)
+            else if(voltage >= 3.90)
                 return 66;
-            else if(voltage > 3.78)
+            else if(voltage >= 3.78)
                 return 33;
             else
                 return 0;
         }
         else
         {
-            if(voltage > 3.92)
+            if(voltage >= 3.90)
                 return 100;
-            else if(voltage > 3.78)
+            else if(voltage >= 3.75)
                 return 66;
-            else if(voltage > 3.73)
+            else if(voltage >= 3.61)
                 return 33;
             else
                 return 0;

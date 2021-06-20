@@ -4,14 +4,15 @@
 #include <vector>
 #include <functional>
 #include <map>
-#include <string> 
+#include <string>
 
 #include <Arduino.h>
 #include <Wire.h>
 #include <Timer.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "SparkFun_Ublox_Arduino_Library.h"
+#include <SparkFun_Ublox_Arduino_Library.h>
+#include <FlashStorage.h>
 
 #include "power_control.h"
 #include "pitches.h"
@@ -25,17 +26,19 @@
 #include "bitmaps.h"
 #include "battery_monitor.h"
 #include "bluetooth_monitor.h"
+#include "rec_monitor.h"
 #include "schedule.h"
 #include "leds.h"
 #include "views.h"
+#include "views_menu.h"
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
 #define GPS_UART2_BAUD 115200
-#define BATTERY_DEAD_VOLT 3.70
 
 #define ONOFFPIN 1
-#define CHARGINGPIN 8
+#define MAINPOWERPIN A2
+#define CHARGINGPIN 7
 #define BATTERYPIN A1
 
 #define PERIPHERALPOWERPIN 0
@@ -46,9 +49,14 @@
 #define SPARE_BLUE 3
 
 #define BUZZERPIN A0
-#define BLUETOOTHPIN 7
+#define BLUETOOTHPIN 6
+
+#define DISPLAYOFFSETX 4
+#define DISPLAYOFFSETY 0
 
 using namespace GNSS_RTK_ROVER;
+
+FlashStorage(tolete, int);
 
 PeripheralPowerController peripheralPower;
 
@@ -70,12 +78,11 @@ void start()
 {
     onOffLED.set(5);
     buzzer.buzzPowerOn();
-
     peripheralPower.turnOn();
     delay(1000);
 
     // Display and Views
-    display = new DisplaySSD1306(
+    display = new DisplaySSD1306({DISPLAYOFFSETX, DISPLAYOFFSETY},
         [&](){ // onConnected
             Serial.println("Display connected");
         },
@@ -84,12 +91,13 @@ void start()
         });
     logoView = new LogoView(display, {0, 0});
     divisionLineView = new DivisionLineView(display, {0, 17});
-    batteryView = new BatteryView(display, {117, 1});
-    btStatusView = new BTStatusView(display, {106, 0});
+    batteryView = new BatteryView(display, {114, 1});
+    btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
 
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
+        [&](float_t voltage, bool isCharging){ // onVoltageChanged
+            auto percentage = BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
             batteryView->setPercentage(percentage);
             batteryView->draw();
 
@@ -97,14 +105,9 @@ void start()
             {
                 onOffLED.set(100, 100);
             }
-            else 
+            else
             {
                 onOffLED.set(10);
-            }
-
-            if(voltage < BATTERY_DEAD_VOLT) 
-            {
-                CPUPowerController::turnOffPowerModule();
             }
         },
         [&](){ // onBatteryFull
@@ -115,8 +118,8 @@ void start()
             if(CPUPowerController::isCharging())
                 batteryLED.set(255, 0);
         },
-        [&](){ // onBatteryZero
-            buzzer.buzzBatteryZero();
+        [&](){ //onBatteryDead
+            CPUPowerController::turnOff();
         });
     Serial.println("Finished setting up battery monitor");
 
@@ -126,14 +129,17 @@ void start()
             btStatusView->setStatus(true);
             btStatusView->draw();
             buzzer.buzzBTConnected();
+            GPSConfig::configureDefault();
+            GPSConfig::WakeUp();
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
-            if(GPSConfig::getMode() == GPSConfig::Rover) 
+            if(GPSConfig::getMode() == GPSConfig::Rover)
             {
                 GPSConfig::configureDefault();
+                GPSConfig::Sleep();
             }
             buzzer.buzzBTDisconnected();
         });
@@ -141,14 +147,16 @@ void start()
 
     GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
         [&](){ // onConnected
-            Serial.println("GPS connected");
+            Serial.println("GNSS connected");
+            GPSConfig::configureDefault();
+            GPSConfig::Sleep();
         },
         [&](){ // onTryingConnection
-            Serial.println("GPS not connected. Trying...");
+            Serial.println("GNSS not connected. Trying...");
         },
         [&](GPSConfig::SolutionType solutionType){
             Serial.print("Solution type: ");
-            switch(solutionType) 
+            switch(solutionType)
             {
                 case GPSConfig::NoFix:
                     solutionTypeView->setStatus(SolutionTypeView::NoFix);
@@ -191,6 +199,36 @@ void start()
     delay(3000);
     logoView->clear();
 
+    // Menu list test
+    // auto options = new MenuOptionPtr[5] {
+    //     new MenuOption(display, {0, 0}, "testing 111"),
+    //     new MenuOption(display, {0, 0}, "testing 222"),
+    //     new MenuOption(display, {0, 0}, "testing 333"),
+    //     new MenuOption(display, {0, 0}, "testing 444"),
+    //     new MenuOption(display, {0, 0}, "testing 555"),
+    // };
+
+    // auto menuList = new MenuList(display, {0, 0}, options, 5);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(1);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(2);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(3);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(4);
+    // menuList->draw();
+    // delay(5000);
+    // menuList->select(0);
+    // menuList->draw();
+    // delay(5000);
+    // delay(10000);
+    // delete menuList;
+
     divisionLineView->draw();
     batteryView->draw();
     btStatusView->draw();
@@ -200,7 +238,7 @@ void start()
 void stop()
 {
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, uint8_t percentage){ // onPercentageChanged
+        [&](float_t voltage, bool isCharging){ // onPercentageChanged
         },
         [&](){ // onBatteryFull
             if(CPUPowerController::isCharging())
@@ -210,13 +248,12 @@ void stop()
             if(CPUPowerController::isCharging())
                 batteryLED.set(255, 500);
         },
-        [&](){ // onBatteryZero
+        [&](){ // onBatteryDead
         });
     BluetoothMonitor::stop();
     GPSConfig::stop();
     peripheralPower.turnOff();
     buzzer.buzzPowerOff();
-    
     int counter = 2;
     while(counter--)
     {
@@ -254,17 +291,23 @@ void externalPowerDisconnected()
 
 void setup()
 {
-    delay(3000);
-    // I2C and UART 
+    analogReadResolution(10);
+    analogReference(AR_INTERNAL2V23);
+    delay(1000);
+
+    auto curr_tolete = tolete.read();
+    Serial.print("Tolete is: "); Serial.println(curr_tolete);
+    tolete.write(8);
+
+    // I2C and UART
     Wire.begin();
 	Serial.begin(MONITOR_SERIAL_BAUD);
-	delay(2000);
+	delay(1000);
 	Serial.println("UARTS & I2C Initialized...");
-
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
-
     Serial.println("Setting up power control");
-    CPUPowerController::setup(ONOFFPIN, CHARGINGPIN,
+
+    CPUPowerController::setup(ONOFFPIN, MAINPOWERPIN, CHARGINGPIN,
         [&](bool onOffState){ // onTurnOnOff
             if(onOffState)
             {
@@ -274,11 +317,11 @@ void setup()
             else
             {
                 Serial.println("Turned Off");
-                stop();        
-            }   
+                stop();
+            }
         },
         [&](bool chargingState){
-            if(chargingState) 
+            if(chargingState)
             {
                 Serial.println("External Power Connected");
                 externalPowerConnected();
@@ -298,7 +341,7 @@ void setup()
     schedule.AddEvent(1000, GPSConfig::checkStatus);
 
     Serial.println("Finished Setup");
-	delay(2000);
+	delay(1000);
 }
 
 void loop()

@@ -8,7 +8,9 @@ namespace GNSS_RTK_ROVER
     class GPSConfig
     {
         public:
-        enum SolutionType 
+        static void WakeUp();
+        static void Sleep();
+        enum SolutionType
         {
             UnknownSolutionType,
             NoFix,
@@ -21,7 +23,7 @@ namespace GNSS_RTK_ROVER
             FloatRTK,
             FixedRTK
         };
-        
+
         enum Mode
         {
             UnknownMode,
@@ -51,7 +53,7 @@ namespace GNSS_RTK_ROVER
 
         static Mode resolveMode();
         static SolutionType resolveSolutionType();
-            
+
         static SFE_UBLOX_GPS gps;
         static int serialBaudUart1;
         static int serialBaudUart2;

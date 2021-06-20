@@ -9,33 +9,27 @@ namespace GNSS_RTK_ROVER
 
     void Component::clear()
     {
-        for(auto i = 0; i < this->dimensions.width; i++)
-        {
-            for(auto j = 0; j < this->dimensions.height; j++)
-            {
-                this->canvas->erasePixel(i + this->position.x, j + this->position.y);
-            }
-        }
+        this->canvas->erase(this->position, this->dimensions);
     }
 
-    Vector2D Component::getPosition() 
-    { 
-        return this->position; 
+    Vector2D Component::getPosition()
+    {
+        return this->position;
     }
-    
-    Dimensions2D Component::getDimensions() 
-    { 
-        return this->dimensions; 
+
+    Dimensions2D Component::getDimensions()
+    {
+        return this->dimensions;
     }
-    
-    void Component::setPosition(Vector2D pos) 
-    { 
-        this->position = pos; 
+
+    void Component::setPosition(Vector2D pos)
+    {
+        this->position = pos;
     }
-    
-    void Component::setDimensions(Dimensions2D dim) 
-    { 
-        this->dimensions = dim; 
+
+    void Component::setDimensions(Dimensions2D dim)
+    {
+        this->dimensions = dim;
     }
 
     void CompositeComponent::draw()
