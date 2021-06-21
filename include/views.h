@@ -30,6 +30,12 @@
 #define VOLTAGEVIEW_WIDTH 72
 #define VOLTAGEVIEW_HEIGHT 8
 
+#define COORDINATESVIEW_WIDTH 120
+#define COORDINATESVIEW_HEIGHT 30
+
+#define COORDINATESVIEW_WIDTH 70
+#define COORDINATESVIEW_HEIGHT 15
+
 namespace GNSS_RTK_ROVER
 {
     class BatteryView : public Component
@@ -143,6 +149,33 @@ namespace GNSS_RTK_ROVER
 
         private:
         float_t voltage;
+    };
+
+    class CoordinatesView : public Component
+    {
+        public:
+        CoordinatesView() {}
+        CoordinatesView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setCoordinates(long _lat, long _lon, long _height);
+
+        private:
+        long lat;
+        long lon;
+        long height;
+    };
+
+    class BaseInfoView : public Component
+    {
+        public:
+        BaseInfoView() {}
+        BaseInfoView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setInfo(long id, long distance);
+
+        private:
+        long id;
+        long distance;
     };
 
     class LogoView : public Component

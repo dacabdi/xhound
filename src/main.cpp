@@ -31,6 +31,7 @@
 #include "leds.h"
 #include "views.h"
 #include "views_menu.h"
+#include "screens.h"
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
@@ -67,12 +68,66 @@ LED batteryLED(BATTERY_LEDPIN);
 
 Canvas* display;
 LogoView* logoView;
+
+CompositeComponent* mainScreen;
 DivisionLineView* divisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
 
+CompositeComponent* coordinatesScreen;
+CoordinatesView* coordinatesView;
+
+CompositeComponent* baseInfoScreen;
+BaseInfoView* baseInfoView;
+
 Schedule schedule;
+
+void createScreens() 
+{
+    // Main screen
+    divisionLineView = new DivisionLineView(display, {0, 17});
+    batteryView = new BatteryView(display, {114, 1});
+    btStatusView = new BTStatusView(display, {103, 0});
+    solutionTypeView = new SolutionTypeView(display, {0, 0});
+    mainScreen = new CompositeComponent(display, {0, 0}, {128, 32});
+    mainScreen->embed(divisionLineView);
+    mainScreen->embed(batteryView);
+    mainScreen->embed(btStatusView);
+    mainScreen->embed(solutionTypeView);
+
+    // Coordinates screen
+    coordinatesView = new CoordinatesView(display, {0, 0});
+    coordinatesScreen = new CompositeComponent(display, {0, 0}, {128, 32});
+    coordinatesScreen->embed(coordinatesView);
+
+    // BaseInfo screen
+    baseInfoView = new BaseInfoView(display, {0, 0});
+    baseInfoScreen = new CompositeComponent(display, {0, 0}, {128, 32});
+    baseInfoScreen->embed(baseInfoView);
+
+    ScreenManager::start({mainScreen, coordinatesScreen, baseInfoScreen});
+}
+
+void deleteScreens()
+{
+    ScreenManager::stop();
+
+    // Main screen
+    delete mainScreen;
+    delete divisionLineView;
+    delete batteryView;
+    delete btStatusView;
+    delete solutionTypeView;
+
+    // Coordinates screen
+    delete coordinatesScreen;
+    delete coordinatesView;
+
+    // BaseInfo screen
+    delete baseInfoScreen;
+    delete baseInfoView;
+}
 
 void start()
 {
@@ -90,10 +145,6 @@ void start()
             Serial.println("Display not connected. Trying...");
         });
     logoView = new LogoView(display, {0, 0});
-    divisionLineView = new DivisionLineView(display, {0, 17});
-    batteryView = new BatteryView(display, {114, 1});
-    btStatusView = new BTStatusView(display, {103, 0});
-    solutionTypeView = new SolutionTypeView(display, {0, 0});
 
     BatteryMonitor::start(BATTERYPIN,
         [&](float_t voltage, bool isCharging){ // onVoltageChanged
@@ -266,10 +317,6 @@ void stop()
 
     delete display;
     delete logoView;
-    delete divisionLineView;
-    delete batteryView;
-    delete btStatusView;
-    delete solutionTypeView;
 }
 
 void externalPowerConnected()
@@ -339,6 +386,7 @@ void setup()
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
     schedule.AddEvent(1000, GPSConfig::checkStatus);
+    schedule.AddEvent(100, ScreenManager::refresh);
 
     Serial.println("Finished Setup");
 	delay(1000);

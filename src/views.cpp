@@ -148,6 +148,45 @@ namespace GNSS_RTK_ROVER
         this->voltage = vol;
     }
 
+    CoordinatesView::CoordinatesView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), lat(0), lon(0), height(0) {} 
+    
+    void CoordinatesView::draw()
+    {
+        this->clear();
+        this->canvas->printText("Latitude: ", {this->position.x, this->position.y});
+        this->canvas->printFloatVariable(this->lat, {this->position.x + 60, this->position.y});
+        this->canvas->printText("Longitude: ", {this->position.x, this->position.y + 12});
+        this->canvas->printFloatVariable(this->lon, {this->position.x + 66, this->position.y + 12});
+        this->canvas->printText("Height: ", {this->position.x, this->position.y + 24});
+        this->canvas->printFloatVariable(this->height, {this->position.x + 48, this->position.y + 24});
+    }
+
+    void CoordinatesView::setCoordinates(long _lat, long _lon, long _height)
+    {
+        lat = _lat;
+        lon = _lon;
+        height = _height;
+    }
+
+    BaseInfoView::BaseInfoView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), id(0), distance(0) {} 
+    
+    void BaseInfoView::draw()
+    {
+        this->clear();
+        this->canvas->printText("Base ID: ", {this->position.x, this->position.y});
+        this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y});
+        this->canvas->printText("Distance: ", {this->position.x, this->position.y + 12});
+        this->canvas->printFloatVariable(this->distance, {this->position.x + 60, this->position.y + 12});
+    }
+
+    void BaseInfoView::setInfo(long _id, long _distance)
+    {
+        id = _id;
+        distance = _distance;
+    }
+
     LogoView::LogoView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{LOGOVIEW_HEIGHT, LOGOVIEW_WIDTH}) {}
 

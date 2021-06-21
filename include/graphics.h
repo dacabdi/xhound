@@ -53,8 +53,9 @@ namespace GNSS_RTK_ROVER
         Dimensions2D dimensions;
     };
 
-    class CompositeComponent : Component
+    class CompositeComponent : public Component
     {
+        public:
         CompositeComponent(Canvas* can, Vector2D pos, Dimensions2D dim) : Component(can, pos, dim) {}
         void draw() override;
         void embed(Component* component);
