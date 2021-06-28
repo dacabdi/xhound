@@ -19,6 +19,9 @@ namespace GNSS_RTK_ROVER
 
     void BatteryView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printBitMap(this->position, this->dimensions, this->percentageBitmaps[this->percentage]);
     }
@@ -33,6 +36,9 @@ namespace GNSS_RTK_ROVER
 
     void BTStatusView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         auto bitmap = this->active ? bt_on_11x15 : bt_off_11x15;
         this->canvas->printBitMap(this->position, this->dimensions, bitmap);
@@ -48,6 +54,9 @@ namespace GNSS_RTK_ROVER
 
     void RECStatusView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         auto bitmap = this->active ? rec_20x15 : norec_20x15;
         this->canvas->printBitMap(this->position, this->dimensions, bitmap);
@@ -63,6 +72,9 @@ namespace GNSS_RTK_ROVER
 
     void DivisionLineView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printBitMap(this->position, this->dimensions, division_line_h_128x1);
     }
@@ -82,6 +94,9 @@ namespace GNSS_RTK_ROVER
 
     void SolutionTypeView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printBitMap(this->position, this->dimensions, this->statusBitmaps[this->status]);
     }
@@ -100,6 +115,9 @@ namespace GNSS_RTK_ROVER
 
     void ModeView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printBitMap(this->position, this->dimensions, this->modeBitmaps[this->mode]);
     }
@@ -114,6 +132,9 @@ namespace GNSS_RTK_ROVER
 
     void AccuracyView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         if(this->accuracy > 9.99)
         {
@@ -138,6 +159,9 @@ namespace GNSS_RTK_ROVER
 
     void VoltageView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printText("VBat = ", {this->position.x, this->position.y});
         this->canvas->printFloatVariable(this->voltage, {this->position.x + 42, this->position.y});
@@ -153,6 +177,9 @@ namespace GNSS_RTK_ROVER
     
     void CoordinatesView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printText("Latitude: ", {this->position.x, this->position.y});
         this->canvas->printFloatVariable(this->lat, {this->position.x + 60, this->position.y});
@@ -174,6 +201,9 @@ namespace GNSS_RTK_ROVER
     
     void BaseInfoView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printText("Base ID: ", {this->position.x, this->position.y});
         this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y});
@@ -192,6 +222,9 @@ namespace GNSS_RTK_ROVER
 
     void LogoView::draw()
     {
+        if(!enabled)
+            return;
+
         this->clear();
         this->canvas->printBitMap(this->position, this->dimensions, logo_128x32);
     }

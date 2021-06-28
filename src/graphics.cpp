@@ -1,11 +1,21 @@
-#include "vector"
+#include <vector>
 #include <string>
 
 #include "graphics.h"
 
 namespace GNSS_RTK_ROVER
 {
-    Component::Component(Canvas* can, Vector2D pos, Dimensions2D dim) : canvas(can), position(pos), dimensions(dim) {}
+    Component::Component(Canvas* can, Vector2D pos, Dimensions2D dim) : canvas(can), position(pos), dimensions(dim), enabled(true) {}
+
+    void Component::enable()
+    {
+        this->enabled = true;
+    }
+
+    void Component::disable()
+    {
+        this->enabled = false;
+    }
 
     void Component::clear()
     {
@@ -34,6 +44,9 @@ namespace GNSS_RTK_ROVER
 
     void CompositeComponent::draw()
     {
+        if(!enabled)
+            return;
+        
         for(auto it = this->subcomponents.begin(); it != this->subcomponents.end(); it++)
         {
             (*it)->draw();

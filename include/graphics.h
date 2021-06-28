@@ -39,6 +39,8 @@ namespace GNSS_RTK_ROVER
         public:
         Component() {}
         Component(Canvas* can, Vector2D pos, Dimensions2D dim);
+        void enable();
+        void disable();
         virtual void draw() = 0;
         void clear();
 
@@ -48,6 +50,7 @@ namespace GNSS_RTK_ROVER
         void setDimensions(Dimensions2D dim);
 
         protected:
+        bool enabled;
         Canvas* canvas;
         Vector2D position;
         Dimensions2D dimensions;
