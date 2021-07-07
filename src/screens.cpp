@@ -16,7 +16,7 @@ namespace GNSS_RTK_ROVER
     {
         initialized = true;
         screens = _screens;
-        mainScreen();      
+        mainScreen();
     }
 
     void ScreenManager::stop()
@@ -60,18 +60,19 @@ namespace GNSS_RTK_ROVER
 
     void ScreenManager::goToScreen(uint8_t screenNumber)
     {
+        Serial.print("Going to screen: "); Serial.println(screenNumber);
         screens[prevScreen]->clear();
 
         for(auto i = 0; i < screens.size(); i++)
         {
-            if(screenNumber)
+            if(i == screenNumber)
             {
-                screens[0]->enable();
-                screens[0]->draw();
+                screens[i]->enable();
+                screens[i]->draw();
             }
             else
             {
-                screens[i]->disable();  
+                screens[i]->disable();
             }
         }
     }

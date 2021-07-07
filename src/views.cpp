@@ -2,7 +2,6 @@
 #include <map>
 #include "graphics.h"
 #include "bitmaps.h"
-
 #include "views.h"
 
 namespace GNSS_RTK_ROVER
@@ -173,20 +172,20 @@ namespace GNSS_RTK_ROVER
     }
 
     CoordinatesView::CoordinatesView(Canvas* can, Vector2D pos)
-        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), lat(0), lon(0), height(0) {} 
-    
+        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), lat(0), lon(0), height(0) {}
+
     void CoordinatesView::draw()
     {
         if(!enabled)
             return;
 
         this->clear();
-        this->canvas->printText("Latitude: ", {this->position.x, this->position.y});
-        this->canvas->printFloatVariable(this->lat, {this->position.x + 60, this->position.y});
-        this->canvas->printText("Longitude: ", {this->position.x, this->position.y + 12});
-        this->canvas->printFloatVariable(this->lon, {this->position.x + 66, this->position.y + 12});
-        this->canvas->printText("Height: ", {this->position.x, this->position.y + 24});
-        this->canvas->printFloatVariable(this->height, {this->position.x + 48, this->position.y + 24});
+        this->canvas->printText("Lat: ", {this->position.x, this->position.y});
+        this->canvas->printFloatVariable(this->lat, {this->position.x + 30, this->position.y});
+        this->canvas->printText("Lon: ", {this->position.x, this->position.y + 12});
+        this->canvas->printFloatVariable(this->lon, {this->position.x + 30, this->position.y + 12});
+        this->canvas->printText("Alt: ", {this->position.x, this->position.y + 24});
+        this->canvas->printFloatVariable(this->height, {this->position.x + 30, this->position.y + 24});
     }
 
     void CoordinatesView::setCoordinates(long _lat, long _lon, long _height)
@@ -196,9 +195,28 @@ namespace GNSS_RTK_ROVER
         height = _height;
     }
 
+
+    SIVView::SIVView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{SIVVIEW_HEIGHT, SIVVIEW_WIDTH}), siv(0) {}
+
+    void SIVView::draw()
+    {
+        if(!enabled)
+            return;
+
+        this->clear();
+        this->canvas->printText("SIV: ", {this->position.x, this->position.y});
+        this->canvas->printFloatVariable(this->siv, {this->position.x + 30, this->position.y});
+    }
+
+    void SIVView::setSIV(int _siv)
+    {
+        siv = _siv;
+    }
+
     BaseInfoView::BaseInfoView(Canvas* can, Vector2D pos)
-        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), id(0), distance(0) {} 
-    
+        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), id(0), distance(0) {}
+
     void BaseInfoView::draw()
     {
         if(!enabled)

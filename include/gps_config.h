@@ -32,7 +32,8 @@ namespace GNSS_RTK_ROVER
         };
 
         static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
-            std::function<void(SolutionType)> onSolutionTypeChanged, std::function<void(Mode)> onModeChanged);
+            std::function<void(SolutionType)> onSolutionTypeChanged, std::function<void(Mode)> onModeChanged,
+            std::function<void(long, long, long)> onCoordsChanged);
         static void stop();
         static SolutionType getSolutionType();
         static Mode getMode();
@@ -53,6 +54,7 @@ namespace GNSS_RTK_ROVER
 
         static Mode resolveMode();
         static SolutionType resolveSolutionType();
+        static bool resolveCoordinates();
 
         static SFE_UBLOX_GPS gps;
         static int serialBaudUart1;
@@ -61,10 +63,14 @@ namespace GNSS_RTK_ROVER
         static bool initialized;
         static SolutionType currSolutionType;
         static Mode currMode;
+        static long latitude;
+        static long longitude;
+        static long height;
         static std::function<void()> onConnected;
         static std::function<void()> onTryingConnection;
         static std::function<void(SolutionType)> onSolutionTypeChanged;
         static std::function<void(Mode)> onModeChanged;
+        static std::function<void(long, long, long)> onCoordsChanged;
     };
 }
 

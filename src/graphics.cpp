@@ -42,11 +42,31 @@ namespace GNSS_RTK_ROVER
         this->dimensions = dim;
     }
 
+    void CompositeComponent::enable()
+    {
+        this->enabled = true;
+
+        for(auto it = this->subcomponents.begin(); it != this->subcomponents.end(); it++)
+        {
+            (*it)->enable();
+        }
+    }
+
+    void CompositeComponent::disable()
+    {
+        this->enabled = false;
+
+        for(auto it = this->subcomponents.begin(); it != this->subcomponents.end(); it++)
+        {
+            (*it)->disable();
+        }
+    }
+
     void CompositeComponent::draw()
     {
         if(!enabled)
             return;
-        
+
         for(auto it = this->subcomponents.begin(); it != this->subcomponents.end(); it++)
         {
             (*it)->draw();

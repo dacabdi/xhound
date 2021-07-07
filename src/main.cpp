@@ -77,6 +77,7 @@ DivisionLineView* divisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
+SIVView* sivView;
 
 CompositeComponent* coordinatesScreen;
 CoordinatesView* coordinatesView;
@@ -86,18 +87,20 @@ BaseInfoView* baseInfoView;
 
 Schedule schedule;
 
-void createScreens() 
+void createScreens()
 {
     // Main screen
     divisionLineView = new DivisionLineView(display, {0, 17});
     batteryView = new BatteryView(display, {114, 1});
     btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
+    sivView = new SIVView(display, {0, 22});
     mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     mainScreen->embed(divisionLineView);
     mainScreen->embed(batteryView);
     mainScreen->embed(btStatusView);
     mainScreen->embed(solutionTypeView);
+    mainScreen->embed(sivView);
 
     // Coordinates screen
     coordinatesView = new CoordinatesView(display, {0, 0});
@@ -127,6 +130,7 @@ void deleteScreens()
     delete batteryView;
     delete btStatusView;
     delete solutionTypeView;
+    delete sivView;
 
     // Coordinates screen
     delete coordinatesScreen;
@@ -135,6 +139,9 @@ void deleteScreens()
     // BaseInfo screen
     delete baseInfoScreen;
     delete baseInfoView;
+
+    // Logo
+    delete logoView;
 }
 
 void start()
@@ -155,8 +162,9 @@ void start()
     logoView = new LogoView(display, {0, 0});
 
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, bool isCharging){ // onVoltageChanged
-            auto percentage = BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
+        [&](float_t voltage, bool isCharging, bool batteryFull){ // onVoltageChanged
+            Serial.println("onVoltageChanged");
+            auto percentage = batteryFull ? 100 : BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
             batteryView->setPercentage(percentage);
             batteryView->draw();
 
@@ -187,6 +195,8 @@ void start()
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
+            sivView->setSIV(235);
+            sivView->draw();
             buzzer.buzzBTConnected();
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
@@ -195,6 +205,8 @@ void start()
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
+            sivView->setSIV(0);
+            sivView->draw();
             if(GPSConfig::getMode() == GPSConfig::Rover)
             {
                 GPSConfig::configureDefault();
@@ -252,10 +264,14 @@ void start()
         },
         [&](GPSConfig::Mode mode){
 
+        },
+        [&](long lat, long lon, long height){
+            coordinatesView->setCoordinates(lat, lon, height);
+            coordinatesView->draw();
         });
 
     logoView->draw();
-    delay(3000);
+    delay(5000);
     logoView->clear();
 
     // Menu list test
@@ -294,7 +310,7 @@ void start()
 void stop()
 {
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, bool isCharging){ // onPercentageChanged
+        [&](float_t voltage, bool isCharging, bool batteryFull){ // onPercentageChanged
         },
         [&](){ // onBatteryFull
             if(CPUPowerController::isCharging())
@@ -393,7 +409,7 @@ void setup()
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
     schedule.AddEvent(1000, GPSConfig::checkStatus);
-    schedule.AddEvent(40, ScreenManager::refresh);
+    schedule.AddEvent(2000, ScreenManager::refresh);
 
     Serial.println("Finished Setup");
 	delay(1000);

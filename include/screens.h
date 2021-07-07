@@ -3,11 +3,11 @@
 
 #include "Arduino.h"
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
     class ScreenManager
     {
-        public:        
+        public:
         static void setup(std::vector<Component*> _screens);
         static void stop();
         static void mainScreen();

@@ -39,8 +39,8 @@ namespace GNSS_RTK_ROVER
         public:
         Component() {}
         Component(Canvas* can, Vector2D pos, Dimensions2D dim);
-        void enable();
-        void disable();
+        virtual void enable();
+        virtual void disable();
         virtual void draw() = 0;
         void clear();
 
@@ -60,6 +60,8 @@ namespace GNSS_RTK_ROVER
     {
         public:
         CompositeComponent(Canvas* can, Vector2D pos, Dimensions2D dim) : Component(can, pos, dim) {}
+        void enable() override;
+        void disable() override;
         void draw() override;
         void embed(Component* component);
 

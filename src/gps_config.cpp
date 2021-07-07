@@ -13,13 +13,18 @@ namespace GNSS_RTK_ROVER
     bool GPSConfig::initialized = false;
     GPSConfig::SolutionType GPSConfig::currSolutionType = GPSConfig::UnknownSolutionType;
     GPSConfig::Mode GPSConfig::currMode = GPSConfig::UnknownMode;
+    long GPSConfig::latitude = 0;
+    long GPSConfig::longitude = 0;
+    long GPSConfig::height = 0;
     std::function<void()> GPSConfig::onConnected;
     std::function<void()> GPSConfig::onTryingConnection;
     std::function<void(GPSConfig::SolutionType)> GPSConfig::onSolutionTypeChanged;
     std::function<void(GPSConfig::Mode)> GPSConfig::onModeChanged;
+    std::function<void(long, long, long)> GPSConfig::onCoordsChanged;
 
     void GPSConfig::start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> _onConnected, std::function<void()> _onTryingConnection,
-            std::function<void(GPSConfig::SolutionType)> _onSolutionTypeChanged, std::function<void(GPSConfig::Mode)> _onModeChanged)
+            std::function<void(GPSConfig::SolutionType)> _onSolutionTypeChanged, std::function<void(GPSConfig::Mode)> _onModeChanged,
+            std::function<void(long, long, long)> _onCoordsChanged)
     {
         initialized = true;
         serialBaudUart1 = _serialBaudUart1;
@@ -28,6 +33,7 @@ namespace GNSS_RTK_ROVER
         onTryingConnection = _onTryingConnection;
         onSolutionTypeChanged = _onSolutionTypeChanged;
         onModeChanged = _onModeChanged;
+        onCoordsChanged = _onCoordsChanged;
         connect();
 
     }
@@ -117,6 +123,11 @@ namespace GNSS_RTK_ROVER
             currMode = mode;
             onModeChanged(currMode);
         }
+
+        if(resolveCoordinates())
+        {
+            onCoordsChanged(latitude, longitude, height);
+        }
     }
 
     GPSConfig::SolutionType GPSConfig::getSolutionType()
@@ -127,6 +138,22 @@ namespace GNSS_RTK_ROVER
     GPSConfig::Mode GPSConfig::getMode()
     {
         return currMode;
+    }
+
+    bool GPSConfig::resolveCoordinates()
+    {
+        auto lat = gps.getLatitude();
+        auto lon = gps.getLongitude();
+        auto alt = gps.getAltitude();
+
+        if(lat == latitude && lon == longitude && alt == height)
+            return false;
+
+        latitude = lat;
+        longitude = lon;
+        height = alt;
+
+        return true;
     }
 
     void GPSConfig::connect()

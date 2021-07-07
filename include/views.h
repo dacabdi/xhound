@@ -30,11 +30,14 @@
 #define VOLTAGEVIEW_WIDTH 72
 #define VOLTAGEVIEW_HEIGHT 8
 
+#define SIVVIEW_WIDTH 128
+#define SIVVIEW_HEIGHT 10
+
 #define COORDINATESVIEW_WIDTH 120
 #define COORDINATESVIEW_HEIGHT 30
 
-#define COORDINATESVIEW_WIDTH 70
-#define COORDINATESVIEW_HEIGHT 15
+#define COORDINATESVIEW_WIDTH 128
+#define COORDINATESVIEW_HEIGHT 32
 
 namespace GNSS_RTK_ROVER
 {
@@ -163,6 +166,18 @@ namespace GNSS_RTK_ROVER
         long lat;
         long lon;
         long height;
+    };
+
+    class SIVView : public Component
+    {
+        public:
+        SIVView() {}
+        SIVView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setSIV(int _siv);
+
+        private:
+        int siv;
     };
 
     class BaseInfoView : public Component
