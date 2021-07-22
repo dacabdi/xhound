@@ -8,8 +8,6 @@ namespace GNSS_RTK_ROVER
     class GPSConfig
     {
         public:
-        static void WakeUp();
-        static void Sleep();
         enum SolutionType
         {
             UnknownSolutionType,
@@ -31,13 +29,28 @@ namespace GNSS_RTK_ROVER
             Base
         };
 
+        struct GPSData
+        {
+            SolutionType solType;
+            Mode mode;
+            long lat;
+            long lon;
+            long alt;
+            uint16_t siv;
+            uint16_t baseID;
+            long baseDistance;
+        };
+
         static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
-            std::function<void(SolutionType)> onSolutionTypeChanged, std::function<void(Mode)> onModeChanged);
+            std::function<void(GPSData&)> onUpdate);
         static void stop();
-        static SolutionType getSolutionType();
-        static Mode getMode();
         static void checkStatus();
         static void configureDefault();
+        static void WakeUp();
+        static void Sleep();
+
+        static SolutionType getSolutionType();
+        static Mode getMode();
 
         private:
         static void connect();
@@ -51,20 +64,21 @@ namespace GNSS_RTK_ROVER
         static void configureAsBase();
         static void configureDisableBase();
 
-        static Mode resolveMode();
-        static SolutionType resolveSolutionType();
+        static void resolveMode();
+        static void resolveSolutionType();
+        static void resolveCoordinates();
+        static void resolveSIV();
+        static void resolveBaseInfo();
 
         static SFE_UBLOX_GPS gps;
         static int serialBaudUart1;
         static int serialBaudUart2;
 
         static bool initialized;
-        static SolutionType currSolutionType;
-        static Mode currMode;
+        static GPSData data;
         static std::function<void()> onConnected;
         static std::function<void()> onTryingConnection;
-        static std::function<void(SolutionType)> onSolutionTypeChanged;
-        static std::function<void(Mode)> onModeChanged;
+        static std::function<void(GPSData&)> onUpdate;
     };
 }
 

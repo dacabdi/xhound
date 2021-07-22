@@ -16,7 +16,7 @@ namespace GNSS_RTK_ROVER
 	class BatteryMonitor
 	{
 		public:
-		static void start(uint8_t batteryPin, std::function<void(float_t, bool)> onPercentageChanged,
+		static void start(uint8_t batteryPin, std::function<void(float_t, bool, bool)> onPercentageChanged,
 			std::function<void()> onBatteryFull, std::function<void()> onBatteryNotFull,
 			std::function<void()> _onBatteryDead);
 		static void stop();
@@ -30,6 +30,7 @@ namespace GNSS_RTK_ROVER
 		static bool validateVoltageReading(float_t);
 
 		static bool initialized;
+		static bool forceUpdate;
 		static bool isCharging;
 		static bool batteryFull;
 		static float_t voltage;
@@ -37,7 +38,7 @@ namespace GNSS_RTK_ROVER
 		static std::function<void()> onBatteryFull;
 		static std::function<void()> onBatteryNotFull;
 		static std::function<void()> onBatteryDead;
-		static std::function<void(float_t, bool)> onVoltageChanged;
+		static std::function<void(float_t, bool, bool)> onVoltageChanged;
 	};
 
 	class BatteryPercentageProvider

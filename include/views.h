@@ -30,6 +30,15 @@
 #define VOLTAGEVIEW_WIDTH 72
 #define VOLTAGEVIEW_HEIGHT 8
 
+#define SIVVIEW_WIDTH 128
+#define SIVVIEW_HEIGHT 10
+
+#define COORDINATESVIEW_WIDTH 120
+#define COORDINATESVIEW_HEIGHT 30
+
+#define COORDINATESVIEW_WIDTH 128
+#define COORDINATESVIEW_HEIGHT 32
+
 namespace GNSS_RTK_ROVER
 {
     class BatteryView : public Component
@@ -83,6 +92,7 @@ namespace GNSS_RTK_ROVER
         public:
         enum SolutionType
         {
+            GNSSOFF,
             NoFix,
             TwoDFix,
             ThreeDFix,
@@ -143,6 +153,49 @@ namespace GNSS_RTK_ROVER
 
         private:
         float_t voltage;
+    };
+
+    class CoordinatesView : public Component
+    {
+        public:
+        CoordinatesView() {}
+        CoordinatesView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setPowerSaving(bool on);
+        void setCoordinates(long _lat, long _lon, long _height);
+
+        private:
+        bool powerSaving;
+        long lat;
+        long lon;
+        long height;
+    };
+
+    class SIVView : public Component
+    {
+        public:
+        SIVView() {}
+        SIVView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setPowerSaving(bool on);
+        void setSIV(int _siv);
+
+        private:
+        bool powerSaving;
+        int siv;
+    };
+
+    class BaseInfoView : public Component
+    {
+        public:
+        BaseInfoView() {}
+        BaseInfoView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setInfo(long id, long distance);
+
+        private:
+        long id;
+        long distance;
     };
 
     class LogoView : public Component

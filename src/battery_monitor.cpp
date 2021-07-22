@@ -6,6 +6,7 @@
 namespace GNSS_RTK_ROVER
 {
     bool BatteryMonitor::initialized = false;
+    bool BatteryMonitor::forceUpdate = true;
     bool BatteryMonitor::isCharging = false;
     bool BatteryMonitor::batteryFull = false;
 	float_t BatteryMonitor::voltage;
@@ -13,14 +14,14 @@ namespace GNSS_RTK_ROVER
     std::function<void()> BatteryMonitor::onBatteryFull;
     std::function<void()> BatteryMonitor::onBatteryNotFull;
     std::function<void()> BatteryMonitor::onBatteryDead;
-	std::function<void(float_t, bool)> BatteryMonitor::onVoltageChanged;
+	std::function<void(float_t, bool, bool)> BatteryMonitor::onVoltageChanged;
 
-    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, bool)> _onVoltageChanged,
+    void BatteryMonitor::start(uint8_t _batteryPin, std::function<void(float_t, bool, bool)> _onVoltageChanged,
         std::function<void()> _onBatteryFull, std::function<void()> _onBatteryNotFull,
         std::function<void()> _onBatteryDead)
     {
         initialized = true;
-        batteryFull = false;
+        forceUpdate = true;
         voltage = 0;
         batteryPin = _batteryPin;
         pinMode(batteryPin, INPUT);
@@ -47,9 +48,10 @@ namespace GNSS_RTK_ROVER
         if(voltage < BATTERY_DEAD_VOLT)
             onBatteryDead();
 
-        if(!batteryFull || !isCharging || voltage < 4.00)
+        if(forceUpdate || !batteryFull || !isCharging || voltage < 4.00)
         {
-            onVoltageChanged(voltage, isCharging);
+            forceUpdate = false;
+            onVoltageChanged(voltage, isCharging, batteryFull);
         }
         if(voltage >= 4.15 && !batteryFull)
         {
@@ -63,7 +65,7 @@ namespace GNSS_RTK_ROVER
         }
 
         Serial.print("Valid:  Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
-        Serial.print("Battery Voltage = "); Serial.print(voltage); Serial.println(" V");
+        Serial.print("Battery Voltage = "); Serial.print(voltage, 3); Serial.println(" V");
     }
 
     void BatteryMonitor::setChargingState(bool state)
@@ -73,7 +75,7 @@ namespace GNSS_RTK_ROVER
             batteryFull = false;
         }
         isCharging = state;
-        onVoltageChanged(voltage, isCharging);
+        onVoltageChanged(voltage, isCharging, batteryFull);
     }
 
     bool BatteryMonitor::isBatteryFull()
@@ -129,7 +131,7 @@ namespace GNSS_RTK_ROVER
     {
         if(isCharging)
         {
-            if(voltage >= 4.15)
+            if(voltage >= 4.13)
                 return 100;
             else if(voltage >= 3.90)
                 return 66;

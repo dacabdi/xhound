@@ -29,6 +29,7 @@
 #include "rec_monitor.h"
 #include "schedule.h"
 #include "leds.h"
+#include "screens.h"
 #include "views.h"
 #include "views_menu.h"
 
@@ -40,6 +41,9 @@
 #define MAINPOWERPIN A2
 #define CHARGINGPIN 7
 #define BATTERYPIN A1
+
+#define RIGHTKEYPIN 4
+#define LEFTKEYPIN 5
 
 #define PERIPHERALPOWERPIN 0
 
@@ -67,12 +71,78 @@ LED batteryLED(BATTERY_LEDPIN);
 
 Canvas* display;
 LogoView* logoView;
+
+CompositeComponent* mainScreen;
 DivisionLineView* divisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
+SIVView* sivView;
+
+CompositeComponent* coordinatesScreen;
+CoordinatesView* coordinatesView;
+
+CompositeComponent* baseInfoScreen;
+BaseInfoView* baseInfoView;
 
 Schedule schedule;
+
+void createScreens()
+{
+    // Main screen
+    divisionLineView = new DivisionLineView(display, {0, 17});
+    batteryView = new BatteryView(display, {114, 1});
+    btStatusView = new BTStatusView(display, {103, 0});
+    solutionTypeView = new SolutionTypeView(display, {0, 0});
+    sivView = new SIVView(display, {0, 22});
+    mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    mainScreen->embed(divisionLineView);
+    mainScreen->embed(batteryView);
+    mainScreen->embed(btStatusView);
+    mainScreen->embed(solutionTypeView);
+    mainScreen->embed(sivView);
+
+    // Coordinates screen
+    coordinatesView = new CoordinatesView(display, {0, 0});
+    coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    coordinatesScreen->embed(coordinatesView);
+
+    // BaseInfo screen
+    baseInfoView = new BaseInfoView(display, {0, 0});
+    baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    baseInfoScreen->embed(baseInfoView);
+
+    ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen});
+
+    pinMode(RIGHTKEYPIN, INPUT_PULLUP);
+    pinMode(LEFTKEYPIN, INPUT_PULLUP);
+    attachInterrupt(RIGHTKEYPIN, ScreenManager::nextScreen, FALLING);
+    attachInterrupt(LEFTKEYPIN, ScreenManager::previousScreen, FALLING);
+}
+
+void deleteScreens()
+{
+    ScreenManager::stop();
+
+    // Main screen
+    delete mainScreen;
+    delete divisionLineView;
+    delete batteryView;
+    delete btStatusView;
+    delete solutionTypeView;
+    delete sivView;
+
+    // Coordinates screen
+    delete coordinatesScreen;
+    delete coordinatesView;
+
+    // BaseInfo screen
+    delete baseInfoScreen;
+    delete baseInfoView;
+
+    // Logo
+    delete logoView;
+}
 
 void start()
 {
@@ -90,14 +160,11 @@ void start()
             Serial.println("Display not connected. Trying...");
         });
     logoView = new LogoView(display, {0, 0});
-    divisionLineView = new DivisionLineView(display, {0, 17});
-    batteryView = new BatteryView(display, {114, 1});
-    btStatusView = new BTStatusView(display, {103, 0});
-    solutionTypeView = new SolutionTypeView(display, {0, 0});
 
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, bool isCharging){ // onVoltageChanged
-            auto percentage = BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
+        [&](float_t voltage, bool isCharging, bool batteryFull){ // onVoltageChanged
+            Serial.println("onVoltageChanged");
+            auto percentage = batteryFull ? 100 : BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
             batteryView->setPercentage(percentage);
             batteryView->draw();
 
@@ -128,18 +195,26 @@ void start()
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
+            sivView->setSIV(235);
+            sivView->draw();
             buzzer.buzzBTConnected();
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
+            coordinatesView->setPowerSaving(false);
+            sivView->setPowerSaving(false);
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
+            sivView->setSIV(0);
+            sivView->draw();
             if(GPSConfig::getMode() == GPSConfig::Rover)
             {
                 GPSConfig::configureDefault();
                 GPSConfig::Sleep();
+                coordinatesView->setPowerSaving(true);
+                sivView->setPowerSaving(true);
             }
             buzzer.buzzBTDisconnected();
         });
@@ -154,9 +229,9 @@ void start()
         [&](){ // onTryingConnection
             Serial.println("GNSS not connected. Trying...");
         },
-        [&](GPSConfig::SolutionType solutionType){
+        [&](GPSConfig::GPSData& data){ // update
             Serial.print("Solution type: ");
-            switch(solutionType)
+            switch(data.solType)
             {
                 case GPSConfig::NoFix:
                     solutionTypeView->setStatus(SolutionTypeView::NoFix);
@@ -190,13 +265,16 @@ void start()
                     Serial.println("Unknown");
             }
             solutionTypeView->draw();
-        },
-        [&](GPSConfig::Mode mode){
 
+            coordinatesView->setCoordinates(data.lat, data.lon, data.alt);
+            coordinatesView->draw();
+
+            sivView->setSIV(data.siv);
+            sivView->draw();
         });
 
     logoView->draw();
-    delay(3000);
+    delay(5000);
     logoView->clear();
 
     // Menu list test
@@ -229,16 +307,13 @@ void start()
     // delay(10000);
     // delete menuList;
 
-    divisionLineView->draw();
-    batteryView->draw();
-    btStatusView->draw();
-    solutionTypeView->draw();
+    createScreens();
 }
 
 void stop()
 {
     BatteryMonitor::start(BATTERYPIN,
-        [&](float_t voltage, bool isCharging){ // onPercentageChanged
+        [&](float_t voltage, bool isCharging, bool batteryFull){ // onPercentageChanged
         },
         [&](){ // onBatteryFull
             if(CPUPowerController::isCharging())
@@ -266,10 +341,8 @@ void stop()
 
     delete display;
     delete logoView;
-    delete divisionLineView;
-    delete batteryView;
-    delete btStatusView;
-    delete solutionTypeView;
+
+    deleteScreens();
 }
 
 void externalPowerConnected()
@@ -338,7 +411,8 @@ void setup()
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
-    schedule.AddEvent(1000, GPSConfig::checkStatus);
+    schedule.AddEvent(2000, GPSConfig::checkStatus);
+    schedule.AddEvent(2000, ScreenManager::refresh);
 
     Serial.println("Finished Setup");
 	delay(1000);
