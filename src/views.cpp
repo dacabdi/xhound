@@ -82,6 +82,7 @@ namespace GNSS_RTK_ROVER
         : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
         this->status = NoFix;
+        this->statusBitmaps[GNSSOFF] = gnss_off;
         this->statusBitmaps[NoFix] = no_fix_48x13;
         this->statusBitmaps[TwoDFix] = twoD_fix_48x13;
         this->statusBitmaps[ThreeDFix] = threeD_fix_48x13;
@@ -172,7 +173,7 @@ namespace GNSS_RTK_ROVER
     }
 
     CoordinatesView::CoordinatesView(Canvas* can, Vector2D pos)
-        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), lat(0), lon(0), height(0) {}
+        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), lat(0), lon(0), height(0), powerSaving(true) {}
 
     void CoordinatesView::draw()
     {
@@ -181,11 +182,27 @@ namespace GNSS_RTK_ROVER
 
         this->clear();
         this->canvas->printText("Lat: ", {this->position.x, this->position.y});
-        this->canvas->printFloatVariable(this->lat, {this->position.x + 30, this->position.y});
+        if(!this->powerSaving)
+            this->canvas->printFloatVariable(this->lat, {this->position.x + 30, this->position.y});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y});
+
         this->canvas->printText("Lon: ", {this->position.x, this->position.y + 12});
-        this->canvas->printFloatVariable(this->lon, {this->position.x + 30, this->position.y + 12});
+        if(!this->powerSaving)
+            this->canvas->printFloatVariable(this->lon, {this->position.x + 30, this->position.y + 12});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 12});
+
         this->canvas->printText("Alt: ", {this->position.x, this->position.y + 24});
-        this->canvas->printFloatVariable(this->height, {this->position.x + 30, this->position.y + 24});
+        if(!this->powerSaving)
+            this->canvas->printFloatVariable(this->height, {this->position.x + 30, this->position.y + 24});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 24});
+    }
+
+    void CoordinatesView::setPowerSaving(bool on)
+    {
+        this->powerSaving = on;
     }
 
     void CoordinatesView::setCoordinates(long _lat, long _lon, long _height)
@@ -197,7 +214,7 @@ namespace GNSS_RTK_ROVER
 
 
     SIVView::SIVView(Canvas* can, Vector2D pos)
-        : Component(can, pos, Dimensions2D{SIVVIEW_HEIGHT, SIVVIEW_WIDTH}), siv(0) {}
+        : Component(can, pos, Dimensions2D{SIVVIEW_HEIGHT, SIVVIEW_WIDTH}), siv(0), powerSaving(true) {}
 
     void SIVView::draw()
     {
@@ -206,7 +223,15 @@ namespace GNSS_RTK_ROVER
 
         this->clear();
         this->canvas->printText("SIV: ", {this->position.x, this->position.y});
-        this->canvas->printFloatVariable(this->siv, {this->position.x + 30, this->position.y});
+        if(!this->powerSaving)
+            this->canvas->printText(std::to_string(this->siv), {this->position.x + 30, this->position.y});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y});
+    }
+
+    void SIVView::setPowerSaving(bool on)
+    {
+        this->powerSaving = on;
     }
 
     void SIVView::setSIV(int _siv)

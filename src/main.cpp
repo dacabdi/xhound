@@ -200,6 +200,8 @@ void start()
             buzzer.buzzBTConnected();
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
+            coordinatesView->setPowerSaving(false);
+            sivView->setPowerSaving(false);
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
@@ -211,6 +213,8 @@ void start()
             {
                 GPSConfig::configureDefault();
                 GPSConfig::Sleep();
+                coordinatesView->setPowerSaving(true);
+                sivView->setPowerSaving(true);
             }
             buzzer.buzzBTDisconnected();
         });
@@ -225,9 +229,9 @@ void start()
         [&](){ // onTryingConnection
             Serial.println("GNSS not connected. Trying...");
         },
-        [&](GPSConfig::SolutionType solutionType){
+        [&](GPSConfig::GPSData& data){ // update
             Serial.print("Solution type: ");
-            switch(solutionType)
+            switch(data.solType)
             {
                 case GPSConfig::NoFix:
                     solutionTypeView->setStatus(SolutionTypeView::NoFix);
@@ -261,13 +265,12 @@ void start()
                     Serial.println("Unknown");
             }
             solutionTypeView->draw();
-        },
-        [&](GPSConfig::Mode mode){
 
-        },
-        [&](long lat, long lon, long height){
-            coordinatesView->setCoordinates(lat, lon, height);
+            coordinatesView->setCoordinates(data.lat, data.lon, data.alt);
             coordinatesView->draw();
+
+            sivView->setSIV(data.siv);
+            sivView->draw();
         });
 
     logoView->draw();
@@ -408,7 +411,7 @@ void setup()
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
-    schedule.AddEvent(1000, GPSConfig::checkStatus);
+    schedule.AddEvent(2000, GPSConfig::checkStatus);
     schedule.AddEvent(2000, ScreenManager::refresh);
 
     Serial.println("Finished Setup");

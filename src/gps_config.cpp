@@ -11,31 +11,21 @@ namespace GNSS_RTK_ROVER
     int GPSConfig::serialBaudUart1;
     int GPSConfig::serialBaudUart2;
     bool GPSConfig::initialized = false;
-    GPSConfig::SolutionType GPSConfig::currSolutionType = GPSConfig::UnknownSolutionType;
-    GPSConfig::Mode GPSConfig::currMode = GPSConfig::UnknownMode;
-    long GPSConfig::latitude = 0;
-    long GPSConfig::longitude = 0;
-    long GPSConfig::height = 0;
+    GPSConfig::GPSData GPSConfig::data;
     std::function<void()> GPSConfig::onConnected;
     std::function<void()> GPSConfig::onTryingConnection;
-    std::function<void(GPSConfig::SolutionType)> GPSConfig::onSolutionTypeChanged;
-    std::function<void(GPSConfig::Mode)> GPSConfig::onModeChanged;
-    std::function<void(long, long, long)> GPSConfig::onCoordsChanged;
+    std::function<void(GPSConfig::GPSData&)> GPSConfig::onUpdate;
 
     void GPSConfig::start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> _onConnected, std::function<void()> _onTryingConnection,
-            std::function<void(GPSConfig::SolutionType)> _onSolutionTypeChanged, std::function<void(GPSConfig::Mode)> _onModeChanged,
-            std::function<void(long, long, long)> _onCoordsChanged)
+            std::function<void(GPSConfig::GPSData&)> _onUpdate)
     {
         initialized = true;
         serialBaudUart1 = _serialBaudUart1;
         serialBaudUart2 = _serialBaudUart2;
         onConnected = _onConnected;
         onTryingConnection = _onTryingConnection;
-        onSolutionTypeChanged = _onSolutionTypeChanged;
-        onModeChanged = _onModeChanged;
-        onCoordsChanged = _onCoordsChanged;
+        onUpdate = _onUpdate;
         connect();
-
     }
 
     void GPSConfig::stop()
@@ -111,49 +101,29 @@ namespace GNSS_RTK_ROVER
         if(!initialized) // Skip if not setup yet
             return;
 
-        auto solType = resolveSolutionType();
-        if(solType != currSolutionType)
-        {
-            currSolutionType = solType;
-            onSolutionTypeChanged(currSolutionType);
-        }
-        auto mode = resolveMode();
-        if(mode != currMode)
-        {
-            currMode = mode;
-            onModeChanged(currMode);
-        }
+        resolveSolutionType();
+        resolveMode();
+        resolveCoordinates();
+        resolveSIV();
 
-        if(resolveCoordinates())
-        {
-            onCoordsChanged(latitude, longitude, height);
-        }
+        onUpdate(data);
     }
 
     GPSConfig::SolutionType GPSConfig::getSolutionType()
     {
-        return currSolutionType;
+        return data.solType;
     }
 
     GPSConfig::Mode GPSConfig::getMode()
     {
-        return currMode;
+        return data.mode;
     }
 
-    bool GPSConfig::resolveCoordinates()
+    void GPSConfig::resolveCoordinates()
     {
-        auto lat = gps.getLatitude();
-        auto lon = gps.getLongitude();
-        auto alt = gps.getAltitude();
-
-        if(lat == latitude && lon == longitude && alt == height)
-            return false;
-
-        latitude = lat;
-        longitude = lon;
-        height = alt;
-
-        return true;
+        data.lat = gps.getLatitude();
+        data.lon = gps.getLongitude();
+        data.alt = gps.getAltitude();
     }
 
     void GPSConfig::connect()
@@ -286,7 +256,7 @@ namespace GNSS_RTK_ROVER
         Serial.println("Base Mode Terminated");
     }
 
-    GPSConfig::SolutionType GPSConfig::resolveSolutionType()
+    void GPSConfig::resolveSolutionType()
     {
         if(gps.getDiffSoln())
         {
@@ -294,32 +264,45 @@ namespace GNSS_RTK_ROVER
             switch(carrierSolutionType)
             {
                 case 0:
-                    return DGPS;
+                    data.solType = DGPS;
+                    return;
                 case 1:
-                    return FloatRTK;
+                    data.solType = FloatRTK;
+                    return;
                 case 2:
-                    return FixedRTK;
+                    data.solType =  FixedRTK;
+                    return;
             }
         }
         auto fixType = gps.getFixType();
         switch(fixType)
         {
             case 1:
-                return DeadReckoning;
+                data.solType = DeadReckoning;
+                return;
             case 2:
-                return TwoDFix;
+                data.solType = TwoDFix;
+                return;
             case 3:
-                return ThreeDFix;
+                data.solType = ThreeDFix;
+                return;
             case 4:
-                return GNSS;
+                data.solType = GNSS;
+                return;
             case 5:
-                return TimeFix;
+                data.solType = TimeFix;
+                return;
         }
-        return NoFix;
+        data.solType = NoFix;
     }
 
-    GPSConfig::Mode GPSConfig::resolveMode()
+    void GPSConfig::resolveMode()
     {
-        return gps.svin.active ? Base : Rover;
+        data.mode = gps.svin.active ? Base : Rover;
+    }
+
+    void GPSConfig::resolveSIV()
+    {
+        data.siv = gps.getSIV();
     }
 }

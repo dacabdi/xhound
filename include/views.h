@@ -92,6 +92,7 @@ namespace GNSS_RTK_ROVER
         public:
         enum SolutionType
         {
+            GNSSOFF,
             NoFix,
             TwoDFix,
             ThreeDFix,
@@ -160,9 +161,11 @@ namespace GNSS_RTK_ROVER
         CoordinatesView() {}
         CoordinatesView(Canvas* can, Vector2D pos);
         void draw() override;
+        void setPowerSaving(bool on);
         void setCoordinates(long _lat, long _lon, long _height);
 
         private:
+        bool powerSaving;
         long lat;
         long lon;
         long height;
@@ -174,9 +177,11 @@ namespace GNSS_RTK_ROVER
         SIVView() {}
         SIVView(Canvas* can, Vector2D pos);
         void draw() override;
+        void setPowerSaving(bool on);
         void setSIV(int _siv);
 
         private:
+        bool powerSaving;
         int siv;
     };
 
