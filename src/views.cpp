@@ -82,7 +82,7 @@ namespace GNSS_RTK_ROVER
         : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
         this->status = NoFix;
-        this->statusBitmaps[GNSSOFF] = gnss_off;
+        this->statusBitmaps[GnssOff] = no_fix_48x13;
         this->statusBitmaps[NoFix] = no_fix_48x13;
         this->statusBitmaps[TwoDFix] = twoD_fix_48x13;
         this->statusBitmaps[ThreeDFix] = threeD_fix_48x13;
@@ -222,7 +222,7 @@ namespace GNSS_RTK_ROVER
             return;
 
         this->clear();
-        this->canvas->printText("SIV: ", {this->position.x, this->position.y});
+        this->canvas->printText("SIV:", {this->position.x, this->position.y});
         if(!this->powerSaving)
             this->canvas->printText(std::to_string(this->siv), {this->position.x + 30, this->position.y});
         else
@@ -237,6 +237,34 @@ namespace GNSS_RTK_ROVER
     void SIVView::setSIV(int _siv)
     {
         siv = _siv;
+    }
+
+    DOPView::DOPView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{DOPVIEW_HEIGHT, DOPVIEW_WIDTH}), dop(0), powerSaving(true) {}
+
+    void DOPView::draw()
+    {
+        if(!enabled)
+            return;
+
+        Serial.print("DOP is: ");
+        Serial.println(this->dop);
+        this->clear();
+        this->canvas->printText("DOP:", {this->position.x, this->position.y});
+        if(!this->powerSaving)
+            this->canvas->printText(String(this->dop).c_str(), {this->position.x + 30, this->position.y});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y});
+    }
+
+    void DOPView::setPowerSaving(bool on)
+    {
+        this->powerSaving = on;
+    }
+
+    void DOPView::setDOP(float _dop)
+    {
+        dop = _dop;
     }
 
     BaseInfoView::BaseInfoView(Canvas* can, Vector2D pos)

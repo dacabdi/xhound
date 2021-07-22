@@ -10,6 +10,7 @@ namespace GNSS_RTK_ROVER
         public:
         enum SolutionType
         {
+            GnssOff,
             UnknownSolutionType,
             NoFix,
             DeadReckoning,
@@ -37,8 +38,7 @@ namespace GNSS_RTK_ROVER
             long lon;
             long alt;
             uint16_t siv;
-            uint16_t baseID;
-            long baseDistance;
+            float_t dop;
         };
 
         static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
@@ -68,13 +68,14 @@ namespace GNSS_RTK_ROVER
         static void resolveSolutionType();
         static void resolveCoordinates();
         static void resolveSIV();
-        static void resolveBaseInfo();
+        static void resolveDOP();
 
         static SFE_UBLOX_GPS gps;
         static int serialBaudUart1;
         static int serialBaudUart2;
 
         static bool initialized;
+        static bool gnssOff;
         static GPSData data;
         static std::function<void()> onConnected;
         static std::function<void()> onTryingConnection;

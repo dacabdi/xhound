@@ -30,8 +30,11 @@
 #define VOLTAGEVIEW_WIDTH 72
 #define VOLTAGEVIEW_HEIGHT 8
 
-#define SIVVIEW_WIDTH 128
+#define SIVVIEW_WIDTH 64
 #define SIVVIEW_HEIGHT 10
+
+#define DOPVIEW_WIDTH 64
+#define DOPVIEW_HEIGHT 10
 
 #define COORDINATESVIEW_WIDTH 120
 #define COORDINATESVIEW_HEIGHT 30
@@ -92,7 +95,7 @@ namespace GNSS_RTK_ROVER
         public:
         enum SolutionType
         {
-            GNSSOFF,
+            GnssOff,
             NoFix,
             TwoDFix,
             ThreeDFix,
@@ -183,6 +186,20 @@ namespace GNSS_RTK_ROVER
         private:
         bool powerSaving;
         int siv;
+    };
+
+    class DOPView : public Component
+    {
+        public:
+        DOPView() {}
+        DOPView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setPowerSaving(bool on);
+        void setDOP(float _siv);
+
+        private:
+        bool powerSaving;
+        float dop;
     };
 
     class BaseInfoView : public Component

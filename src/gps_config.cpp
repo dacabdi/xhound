@@ -11,6 +11,7 @@ namespace GNSS_RTK_ROVER
     int GPSConfig::serialBaudUart1;
     int GPSConfig::serialBaudUart2;
     bool GPSConfig::initialized = false;
+    bool GPSConfig::gnssOff = false;
     GPSConfig::GPSData GPSConfig::data;
     std::function<void()> GPSConfig::onConnected;
     std::function<void()> GPSConfig::onTryingConnection;
@@ -50,6 +51,7 @@ namespace GNSS_RTK_ROVER
     {
         gps.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX);
         Serial.println("GNSS is SLEEPING ...");
+        gnssOff = true;
     }
 
     void GPSConfig::WakeUp()
@@ -74,6 +76,8 @@ namespace GNSS_RTK_ROVER
         Serial.print(gps.getSecond());
         Serial.print(" UTC");
         Serial.println();
+        
+        gnssOff = false;
     }
 
     void GPSConfig::configurePorts()
@@ -105,7 +109,8 @@ namespace GNSS_RTK_ROVER
         resolveMode();
         resolveCoordinates();
         resolveSIV();
-
+        resolveDOP();
+    
         onUpdate(data);
     }
 
@@ -258,6 +263,11 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::resolveSolutionType()
     {
+        if(gnssOff)
+        {
+            data.solType = GnssOff;
+            return;
+        }
         if(gps.getDiffSoln())
         {
             auto carrierSolutionType = gps.getCarrierSolutionType();
@@ -304,5 +314,10 @@ namespace GNSS_RTK_ROVER
     void GPSConfig::resolveSIV()
     {
         data.siv = gps.getSIV();
+    }
+
+    void GPSConfig::resolveDOP()
+    {
+        data.dop = ((float)gps.getPDOP()/100);
     }
 }

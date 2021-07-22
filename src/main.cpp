@@ -78,6 +78,7 @@ BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
 SIVView* sivView;
+DOPView* dopView;
 
 CompositeComponent* coordinatesScreen;
 CoordinatesView* coordinatesView;
@@ -95,12 +96,14 @@ void createScreens()
     btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
     sivView = new SIVView(display, {0, 22});
+    dopView = new DOPView(display, {65, 22});
     mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     mainScreen->embed(divisionLineView);
     mainScreen->embed(batteryView);
     mainScreen->embed(btStatusView);
     mainScreen->embed(solutionTypeView);
     mainScreen->embed(sivView);
+    mainScreen->embed(dopView);
 
     // Coordinates screen
     coordinatesView = new CoordinatesView(display, {0, 0});
@@ -131,6 +134,7 @@ void deleteScreens()
     delete btStatusView;
     delete solutionTypeView;
     delete sivView;
+    delete dopView;
 
     // Coordinates screen
     delete coordinatesScreen;
@@ -202,19 +206,23 @@ void start()
             GPSConfig::WakeUp();
             coordinatesView->setPowerSaving(false);
             sivView->setPowerSaving(false);
+            dopView->setPowerSaving(false);
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
-            sivView->setSIV(0);
+            sivView->setPowerSaving(true);
             sivView->draw();
+            dopView->setPowerSaving(true);
+            dopView->draw();
             if(GPSConfig::getMode() == GPSConfig::Rover)
             {
                 GPSConfig::configureDefault();
                 GPSConfig::Sleep();
                 coordinatesView->setPowerSaving(true);
                 sivView->setPowerSaving(true);
+                dopView->setPowerSaving(true);
             }
             buzzer.buzzBTDisconnected();
         });
@@ -233,6 +241,10 @@ void start()
             Serial.print("Solution type: ");
             switch(data.solType)
             {
+                case GPSConfig::GnssOff:
+                    solutionTypeView->setStatus(SolutionTypeView::GnssOff);
+                    Serial.println("GNSS Off");
+                    break;
                 case GPSConfig::NoFix:
                     solutionTypeView->setStatus(SolutionTypeView::NoFix);
                     Serial.println("No Fix");
@@ -271,6 +283,9 @@ void start()
 
             sivView->setSIV(data.siv);
             sivView->draw();
+
+            dopView->setDOP(data.dop);
+            dopView->draw();
         });
 
     logoView->draw();
