@@ -278,11 +278,26 @@ namespace GNSS_RTK_ROVER
         if(!enabled)
             return;
 
+        auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + " mi";
+
         this->clear();
         this->canvas->printText("Base ID: ", {this->position.x, this->position.y});
-        this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y});
+        if(!this->powerSaving && this->id != 0)
+            this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y});
+        else
+            this->canvas->printText("N/A", {this->position.x + 54, this->position.y});
+
         this->canvas->printText("Distance: ", {this->position.x, this->position.y + 12});
-        this->canvas->printFloatVariable(this->distance, {this->position.x + 60, this->position.y + 12});
+        if(!this->powerSaving && this->id != 0)
+            this->canvas->printText(distanceMi.c_str(), {this->position.x + 60, this->position.y + 12});
+        else
+            this->canvas->printText("N/A", {this->position.x + 60, this->position.y + 12});
+
+    }
+
+    void BaseInfoView::setPowerSaving(bool on)
+    {
+        this->powerSaving = on;
     }
 
     void BaseInfoView::setInfo(long _id, long _distance)

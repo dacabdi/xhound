@@ -87,7 +87,9 @@ CoordinatesView* coordinatesView;
 DivisionLineView* coordDownDivisionLineView;
 
 CompositeComponent* baseInfoScreen;
+DivisionLineView* baseInfoUpDivisionLineView;
 BaseInfoView* baseInfoView;
+DivisionLineView* baseInfoDownDivisionLineView;
 
 Schedule schedule;
 
@@ -118,7 +120,9 @@ void createScreens()
     coordinatesScreen->embed(coordDownDivisionLineView);
 
     // BaseInfo screen
-    baseInfoView = new BaseInfoView(display, {0, 0});
+    baseInfoUpDivisionLineView = new DivisionLineView(display, {0, 2});
+    baseInfoView = new BaseInfoView(display, {0, 6});
+    baseInfoDownDivisionLineView = new DivisionLineView(display, {0, 30});
     baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     baseInfoScreen->embed(baseInfoView);
 
@@ -152,6 +156,8 @@ void deleteScreens()
     // BaseInfo screen
     delete baseInfoScreen;
     delete baseInfoView;
+    delete baseInfoUpDivisionLineView;
+    delete baseInfoDownDivisionLineView;
 
     // Logo
     delete logoView;
@@ -208,14 +214,17 @@ void start()
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
-            sivView->setSIV(235);
-            sivView->draw();
             buzzer.buzzBTConnected();
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
             coordinatesView->setPowerSaving(false);
+            coordinatesView->draw();
             sivView->setPowerSaving(false);
+            sivView->draw();
             dopView->setPowerSaving(false);
+            dopView->draw();
+            baseInfoView->setPowerSaving(false);
+            baseInfoView->draw();
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
@@ -225,6 +234,9 @@ void start()
             sivView->draw();
             dopView->setPowerSaving(true);
             dopView->draw();
+            baseInfoView->setPowerSaving(true);
+            baseInfoView->draw();
+
             if(GPSConfig::getMode() == GPSConfig::Rover)
             {
                 GPSConfig::configureDefault();
@@ -296,6 +308,9 @@ void start()
 
             dopView->setDOP(data.dop);
             dopView->draw();
+
+            baseInfoView->setInfo(data.refID, data.refDistance);
+            baseInfoView->draw();
         });
 
     logoView->draw();

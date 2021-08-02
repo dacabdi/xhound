@@ -208,9 +208,11 @@ namespace GNSS_RTK_ROVER
         BaseInfoView() {}
         BaseInfoView(Canvas* can, Vector2D pos);
         void draw() override;
+        void setPowerSaving(bool on);
         void setInfo(long id, long distance);
 
         private:
+        bool powerSaving;
         long id;
         long distance;
     };

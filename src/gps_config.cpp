@@ -109,6 +109,7 @@ namespace GNSS_RTK_ROVER
         resolveCoordinates();
         resolveSIV();
         resolveDOP();
+        resolveReferenceStation();
     
         onUpdate(data);
     }
@@ -333,5 +334,19 @@ namespace GNSS_RTK_ROVER
         String prettyLon = String(lonDegrees) + "° " + String(lonMinutes) + "\' " + String(lonSeconds) + "\""; 
 
         return {prettyLat, prettyLon};
+    }
+
+    void GPSConfig::resolveReferenceStation()
+    {
+        if(gnss.getRELPOSNED())
+        {
+            data.refID = gnss.packetUBXNAVRELPOSNED->data.refStationId;
+            data.refDistance = gnss.packetUBXNAVRELPOSNED->data.relPosLength;
+        } 
+        else
+        {
+            data.refID = 0;
+            data.refDistance = 0;
+        }
     }
 }
