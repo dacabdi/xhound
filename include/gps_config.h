@@ -64,13 +64,12 @@ namespace GNSS_RTK_ROVER
         static void configureAsBase();
         static void configureDisableBase();
 
-        static void resolveMode();
         static void resolveSolutionType();
         static void resolveCoordinates();
         static void resolveSIV();
         static void resolveDOP();
 
-        static SFE_UBLOX_GPS gps;
+        static SFE_UBLOX_GNSS gnss;
         static int serialBaudUart1;
         static int serialBaudUart2;
 
