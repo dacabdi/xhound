@@ -187,29 +187,29 @@ namespace GNSS_RTK_ROVER
 
         // Latitude
         this->clear(Latitude);
-        this->canvas->printText("Lat: ", {this->position.x, this->position.y + 9});
+        this->canvas->printText("Lat: ", {this->position.x + 4, this->position.y + 9});
         if(!this->powerSaving)
-            this->canvas->printText(this->lat.c_str(), {this->position.x + 30, this->position.y + 9});
+            this->canvas->printText(this->lat.c_str(), {this->position.x + 34, this->position.y + 9});
         else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 9});
+            this->canvas->printText("N/A", {this->position.x + 34, this->position.y + 9});
 
         // Longitude
         this->clear(Longitude);
-        this->canvas->printText("Lon: ", {this->position.x, this->position.y + 17});
+        this->canvas->printText("Lon: ", {this->position.x + 4, this->position.y + 17});
         if(!this->powerSaving)
-            this->canvas->printText(this->lon.c_str(), {this->position.x + 30, this->position.y + 17});
+            this->canvas->printText(this->lon.c_str(), {this->position.x + 34, this->position.y + 17});
         else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 17});
+            this->canvas->printText("N/A", {this->position.x + 34, this->position.y + 17});
 
         // Altitude
         String heightStr = String(this->height) + " ft";
 
         this->clear(Altitude);
-        this->canvas->printText("Alt: ", {this->position.x, this->position.y + 25});
+        this->canvas->printText("Alt: ", {this->position.x + 4, this->position.y + 25});
         if(!this->powerSaving)
-            this->canvas->printText(heightStr.c_str(), {this->position.x + 30, this->position.y + 25});
+            this->canvas->printText(heightStr.c_str(), {this->position.x + 34, this->position.y + 25});
         else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 25});
+            this->canvas->printText("N/A", {this->position.x + 34, this->position.y + 25});
     }
 
     void CoordinatesView::setPowerSaving(bool on)
@@ -313,21 +313,21 @@ namespace GNSS_RTK_ROVER
 
         // Base ID
         this->clear(BaseID);
-        this->canvas->printText("Base ID: ", {this->position.x, this->position.y + 12});
+        this->canvas->printText("Base ID: ", {this->position.x + 4, this->position.y + 12});
         if(!this->powerSaving && this->id != 0)
-            this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y + 12});
+            this->canvas->printFloatVariable(this->id, {this->position.x + 58, this->position.y + 12});
         else
-            this->canvas->printText("N/A", {this->position.x + 54, this->position.y});
+            this->canvas->printText("N/A", {this->position.x + 58, this->position.y});
 
         // Base Distance
         auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + " mi";
 
         this->clear(Distance);
-        this->canvas->printText("Distance: ", {this->position.x, this->position.y + 21});
+        this->canvas->printText("Distance: ", {this->position.x + 4, this->position.y + 21});
         if(!this->powerSaving && this->id != 0)
-            this->canvas->printText(distanceMi.c_str(), {this->position.x + 60, this->position.y + 21});
+            this->canvas->printText(distanceMi.c_str(), {this->position.x + 64, this->position.y + 21});
         else
-            this->canvas->printText("N/A", {this->position.x + 60, this->position.y + 21});
+            this->canvas->printText("N/A", {this->position.x + 64, this->position.y + 21});
 
     }
 
@@ -373,15 +373,15 @@ namespace GNSS_RTK_ROVER
 
         // Model
         this->clear(Model);
-        this->canvas->printText((String("Model: ") + model).c_str(), {this->position.x, this->position.y + 9});
+        this->canvas->printText((String("Model: ") + model).c_str(), {this->position.x + 4, this->position.y + 9});
 
         // SN
         this->clear(SN);
-        this->canvas->printText((String("SN: ") + sn).c_str(), {this->position.x, this->position.y + 17});
+        this->canvas->printText((String("SN: ") + sn).c_str(), {this->position.x + 4, this->position.y + 17});
 
         // BTID
         this->clear(BTID);
-        this->canvas->printText((String("BTID: ") + btID).c_str(), {this->position.x, this->position.y + 25});
+        this->canvas->printText((String("BTID: ") + btID).c_str(), {this->position.x + 4, this->position.y + 25});
     }
 
     void DeviceInfoView::clear(DeviceInfoView::ViewSection section)
