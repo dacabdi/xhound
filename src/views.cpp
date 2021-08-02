@@ -82,7 +82,7 @@ namespace GNSS_RTK_ROVER
         : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
         this->status = NoFix;
-        this->statusBitmaps[GnssOff] = no_fix_48x13;
+        this->statusBitmaps[GnssOff] = gnss_off_48x13;
         this->statusBitmaps[NoFix] = no_fix_48x13;
         this->statusBitmaps[TwoDFix] = twoD_fix_48x13;
         this->statusBitmaps[ThreeDFix] = threeD_fix_48x13;
