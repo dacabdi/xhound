@@ -76,7 +76,6 @@ namespace GNSS_RTK_ROVER
         Serial.print(gps.getSecond());
         Serial.print(" UTC");
         Serial.println();
-        
         gnssOff = false;
     }
 
@@ -128,7 +127,7 @@ namespace GNSS_RTK_ROVER
     {
         data.lat = gps.getLatitude();
         data.lon = gps.getLongitude();
-        data.alt = gps.getAltitude();
+        data.alt = gps.getAltitudeMSL() * 0.00328084;
     }
 
     void GPSConfig::connect()
