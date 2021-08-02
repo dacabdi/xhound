@@ -42,7 +42,7 @@ namespace GNSS_RTK_ROVER
         virtual void enable();
         virtual void disable();
         virtual void draw() = 0;
-        void clear();
+        virtual void clear();
 
         Vector2D getPosition();
         Dimensions2D getDimensions();

@@ -34,6 +34,11 @@
 #include "views.h"
 #include "views_menu.h"
 
+// Device Info
+constexpr char model[] = "xHound v2.1";
+constexpr char sn[]    = "XH-00000001";
+constexpr char btID[]  = "XH-12345678";
+
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
 #define GPS_UART2_BAUD 115200
@@ -124,7 +129,10 @@ void createScreens()
     baseInfoView = new BaseInfoView(display, {0, 6});
     baseInfoDownDivisionLineView = new DivisionLineView(display, {0, 30});
     baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    baseInfoScreen->embed(baseInfoUpDivisionLineView);
     baseInfoScreen->embed(baseInfoView);
+    baseInfoScreen->embed(baseInfoDownDivisionLineView);
+
 
     ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen});
 

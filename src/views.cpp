@@ -180,27 +180,36 @@ namespace GNSS_RTK_ROVER
         if(!enabled)
             return;
 
-        this->clear();
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 34, this->position.y}, {56, 6}, coordinates_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {128, 1}, division_line_h_128x1);
 
+        // Latitude
+        this->clear(Latitude);
+        this->canvas->printText("Lat: ", {this->position.x, this->position.y + 9});
+        if(!this->powerSaving)
+            this->canvas->printText(this->lat.c_str(), {this->position.x + 30, this->position.y + 9});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 9});
+
+        // Longitude
+        this->clear(Longitude);
+        this->canvas->printText("Lon: ", {this->position.x, this->position.y + 17});
+        if(!this->powerSaving)
+            this->canvas->printText(this->lon.c_str(), {this->position.x + 30, this->position.y + 17});
+        else
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 17});
+
+        // Altitude
         String heightStr = String(this->height) + " ft";
-        
-        this->canvas->printText("Lat: ", {this->position.x, this->position.y});
-        if(!this->powerSaving)
-            this->canvas->printText(this->lat.c_str(), {this->position.x + 30, this->position.y});
-        else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y});
 
-        this->canvas->printText("Lon: ", {this->position.x, this->position.y + 12});
+        this->clear(Altitude);
+        this->canvas->printText("Alt: ", {this->position.x, this->position.y + 25});
         if(!this->powerSaving)
-            this->canvas->printText(this->lon.c_str(), {this->position.x + 30, this->position.y + 12});
+            this->canvas->printText(heightStr.c_str(), {this->position.x + 30, this->position.y + 25});
         else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 12});
-
-        this->canvas->printText("Alt: ", {this->position.x, this->position.y + 24});
-        if(!this->powerSaving)
-            this->canvas->printText(heightStr.c_str(), {this->position.x + 30, this->position.y + 24});
-        else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 24});
+            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 25});
     }
 
     void CoordinatesView::setPowerSaving(bool on)
@@ -215,6 +224,24 @@ namespace GNSS_RTK_ROVER
         height = _height;
     }
 
+    void CoordinatesView::clear(CoordinatesView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {128, 8});
+                break;
+            case Latitude:
+                this->canvas->erase({this->position.x, this->position.y +  9}, {128, 8});
+                break;
+            case Longitude:
+                this->canvas->erase({this->position.x, this->position.y + 17}, {128, 8});
+                break;
+            case Altitude:
+                this->canvas->erase({this->position.x, this->position.y + 25}, {128, 8});
+                break;
+        }
+    }
 
     SIVView::SIVView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{SIVVIEW_HEIGHT, SIVVIEW_WIDTH}), siv(0), powerSaving(true) {}

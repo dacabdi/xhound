@@ -168,6 +168,16 @@ namespace GNSS_RTK_ROVER
         void setCoordinates(String _lat, String _lon, long _height);
 
         private:
+        enum ViewSection 
+        {
+            Header,
+            Latitude,
+            Longitude,
+            Altitude
+        };
+
+        void clear(ViewSection section);
+
         bool powerSaving;
         String lat;
         String lon;
