@@ -87,14 +87,10 @@ SIVView* sivView;
 DOPView* dopView;
 
 CompositeComponent* coordinatesScreen;
-DivisionLineView* coordUpDivisionLineView;
 CoordinatesView* coordinatesView;
-DivisionLineView* coordDownDivisionLineView;
 
 CompositeComponent* baseInfoScreen;
-DivisionLineView* baseInfoUpDivisionLineView;
 BaseInfoView* baseInfoView;
-DivisionLineView* baseInfoDownDivisionLineView;
 
 Schedule schedule;
 
@@ -116,22 +112,14 @@ void createScreens()
     mainScreen->embed(dopView);
 
     // Coordinates screen
-    coordUpDivisionLineView = new DivisionLineView(display, {0, 2});
     coordinatesView = new CoordinatesView(display, {0, 4});
-    coordDownDivisionLineView = new DivisionLineView(display, {0, 30});
     coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
-    coordinatesScreen->embed(coordUpDivisionLineView);
     coordinatesScreen->embed(coordinatesView);
-    coordinatesScreen->embed(coordDownDivisionLineView);
 
     // BaseInfo screen
-    baseInfoUpDivisionLineView = new DivisionLineView(display, {0, 2});
     baseInfoView = new BaseInfoView(display, {0, 6});
-    baseInfoDownDivisionLineView = new DivisionLineView(display, {0, 30});
     baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
-    baseInfoScreen->embed(baseInfoUpDivisionLineView);
     baseInfoScreen->embed(baseInfoView);
-    baseInfoScreen->embed(baseInfoDownDivisionLineView);
 
 
     ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen});
@@ -157,15 +145,11 @@ void deleteScreens()
 
     // Coordinates screen
     delete coordinatesScreen;
-    delete coordUpDivisionLineView;
     delete coordinatesView;
-    delete coordDownDivisionLineView;
 
     // BaseInfo screen
     delete baseInfoScreen;
     delete baseInfoView;
-    delete baseInfoUpDivisionLineView;
-    delete baseInfoDownDivisionLineView;
 
     // Logo
     delete logoView;

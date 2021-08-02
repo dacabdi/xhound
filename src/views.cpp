@@ -305,20 +305,29 @@ namespace GNSS_RTK_ROVER
         if(!enabled)
             return;
 
-        auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + " mi";
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 41, this->position.y}, {42, 6}, base_info_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {128, 1}, division_line_h_128x1);
 
-        this->clear();
-        this->canvas->printText("Base ID: ", {this->position.x, this->position.y});
+
+        // Base ID
+        this->clear(BaseID);
+        this->canvas->printText("Base ID: ", {this->position.x, this->position.y + 12});
         if(!this->powerSaving && this->id != 0)
-            this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y});
+            this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y + 12});
         else
             this->canvas->printText("N/A", {this->position.x + 54, this->position.y});
 
-        this->canvas->printText("Distance: ", {this->position.x, this->position.y + 12});
+        // Base Distance
+        auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + " mi";
+
+        this->clear(Distance);
+        this->canvas->printText("Distance: ", {this->position.x, this->position.y + 21});
         if(!this->powerSaving && this->id != 0)
-            this->canvas->printText(distanceMi.c_str(), {this->position.x + 60, this->position.y + 12});
+            this->canvas->printText(distanceMi.c_str(), {this->position.x + 60, this->position.y + 21});
         else
-            this->canvas->printText("N/A", {this->position.x + 60, this->position.y + 12});
+            this->canvas->printText("N/A", {this->position.x + 60, this->position.y + 21});
 
     }
 
@@ -331,6 +340,22 @@ namespace GNSS_RTK_ROVER
     {
         id = _id;
         distance = _distance;
+    }
+
+    void BaseInfoView::clear(BaseInfoView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {128, 8});
+                break;
+            case BaseID:
+                this->canvas->erase({this->position.x, this->position.y +  12}, {128, 8});
+                break;
+            case Distance:
+                this->canvas->erase({this->position.x, this->position.y + 21}, {128, 8});
+                break;
+        }
     }
 
     LogoView::LogoView(Canvas* can, Vector2D pos)

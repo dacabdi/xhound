@@ -222,6 +222,15 @@ namespace GNSS_RTK_ROVER
         void setInfo(long id, long distance);
 
         private:
+        enum ViewSection 
+        {
+            Header,
+            BaseID,
+            Distance
+        };
+
+        void clear(ViewSection section);
+
         bool powerSaving;
         long id;
         long distance;
