@@ -5,6 +5,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <utility>
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -73,7 +74,7 @@ Canvas* display;
 LogoView* logoView;
 
 CompositeComponent* mainScreen;
-DivisionLineView* divisionLineView;
+DivisionLineView* mainDivisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
@@ -81,7 +82,9 @@ SIVView* sivView;
 DOPView* dopView;
 
 CompositeComponent* coordinatesScreen;
+DivisionLineView* coordUpDivisionLineView;
 CoordinatesView* coordinatesView;
+DivisionLineView* coordDownDivisionLineView;
 
 CompositeComponent* baseInfoScreen;
 BaseInfoView* baseInfoView;
@@ -91,14 +94,14 @@ Schedule schedule;
 void createScreens()
 {
     // Main screen
-    divisionLineView = new DivisionLineView(display, {0, 17});
+    mainDivisionLineView = new DivisionLineView(display, {0, 17});
     batteryView = new BatteryView(display, {114, 1});
     btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
     sivView = new SIVView(display, {0, 22});
     dopView = new DOPView(display, {65, 22});
     mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
-    mainScreen->embed(divisionLineView);
+    mainScreen->embed(mainDivisionLineView);
     mainScreen->embed(batteryView);
     mainScreen->embed(btStatusView);
     mainScreen->embed(solutionTypeView);
@@ -106,9 +109,13 @@ void createScreens()
     mainScreen->embed(dopView);
 
     // Coordinates screen
-    coordinatesView = new CoordinatesView(display, {0, 0});
+    coordUpDivisionLineView = new DivisionLineView(display, {0, 2});
+    coordinatesView = new CoordinatesView(display, {0, 4});
+    coordDownDivisionLineView = new DivisionLineView(display, {0, 30});
     coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    coordinatesScreen->embed(coordUpDivisionLineView);
     coordinatesScreen->embed(coordinatesView);
+    coordinatesScreen->embed(coordDownDivisionLineView);
 
     // BaseInfo screen
     baseInfoView = new BaseInfoView(display, {0, 0});
@@ -129,7 +136,7 @@ void deleteScreens()
 
     // Main screen
     delete mainScreen;
-    delete divisionLineView;
+    delete mainDivisionLineView;
     delete batteryView;
     delete btStatusView;
     delete solutionTypeView;
@@ -138,7 +145,9 @@ void deleteScreens()
 
     // Coordinates screen
     delete coordinatesScreen;
+    delete coordUpDivisionLineView;
     delete coordinatesView;
+    delete coordDownDivisionLineView;
 
     // BaseInfo screen
     delete baseInfoScreen;
@@ -278,7 +287,8 @@ void start()
             }
             solutionTypeView->draw();
 
-            coordinatesView->setCoordinates(data.lat, data.lon, data.alt);
+            auto latlon = GPSConfig::getLatLonHRPretty();
+            coordinatesView->setCoordinates(latlon.first, latlon.second, data.alt);
             coordinatesView->draw();
 
             sivView->setSIV(data.siv);

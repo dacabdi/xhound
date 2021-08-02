@@ -181,21 +181,24 @@ namespace GNSS_RTK_ROVER
             return;
 
         this->clear();
+
+        String heightStr = String(this->height) + " ft";
+        
         this->canvas->printText("Lat: ", {this->position.x, this->position.y});
         if(!this->powerSaving)
-            this->canvas->printFloatVariable(this->lat, {this->position.x + 30, this->position.y});
+            this->canvas->printText(this->lat.c_str(), {this->position.x + 30, this->position.y});
         else
             this->canvas->printText("N/A", {this->position.x + 30, this->position.y});
 
         this->canvas->printText("Lon: ", {this->position.x, this->position.y + 12});
         if(!this->powerSaving)
-            this->canvas->printFloatVariable(this->lon, {this->position.x + 30, this->position.y + 12});
+            this->canvas->printText(this->lon.c_str(), {this->position.x + 30, this->position.y + 12});
         else
             this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 12});
 
         this->canvas->printText("Alt: ", {this->position.x, this->position.y + 24});
         if(!this->powerSaving)
-            this->canvas->printFloatVariable(this->height, {this->position.x + 30, this->position.y + 24});
+            this->canvas->printText(heightStr.c_str(), {this->position.x + 30, this->position.y + 24});
         else
             this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 24});
     }
@@ -205,7 +208,7 @@ namespace GNSS_RTK_ROVER
         this->powerSaving = on;
     }
 
-    void CoordinatesView::setCoordinates(long _lat, long _lon, long _height)
+    void CoordinatesView::setCoordinates(String _lat, String _lon, long _height)
     {
         lat = _lat;
         lon = _lon;

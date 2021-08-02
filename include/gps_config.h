@@ -51,6 +51,7 @@ namespace GNSS_RTK_ROVER
 
         static SolutionType getSolutionType();
         static Mode getMode();
+        static std::pair<String, String> getLatLonHRPretty();
 
         private:
         static void connect();

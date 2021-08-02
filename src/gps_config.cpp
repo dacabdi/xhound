@@ -1,4 +1,5 @@
 #include <functional>
+#include <utility>
 
 #include "SparkFun_u-blox_GNSS_Arduino_Library.h"
 #include "gps_config.h"
@@ -124,9 +125,9 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::resolveCoordinates()
     {
-        data.lat = gnss.getLatitude();
-        data.lon = gnss.getLongitude();
-        data.alt = gnss.getAltitudeMSL() * 0.00328084;
+        data.lat   = gnss.getHighResLatitude();
+        data.lon   = gnss.getHighResLongitude();
+        data.alt   = gnss.getAltitudeMSL() * 0.00328084;
     }
 
     void GPSConfig::connect()
@@ -312,5 +313,25 @@ namespace GNSS_RTK_ROVER
     void GPSConfig::resolveDOP()
     {
         data.dop = ((float)gnss.getPDOP()/100);
+    }
+
+    // lat, lon
+    std::pair<String, String> GPSConfig::getLatLonHRPretty()
+    {
+        int latDegrees = float(data.lat) * std::pow(10, -7);
+        int latMinutesTemp = float(data.lat - (latDegrees * std::pow(10, 7))) * 60;
+        int latMinutes = latMinutesTemp * std::pow(10, -7);
+        float latSeconds = float(latMinutesTemp - (latMinutes * std::pow(10, 7))) * pow(10, -7) * 60;
+
+        String prettyLat = String(latDegrees) + "° " + String(latMinutes) + "\' " + String(latSeconds) + "\""; 
+
+        int lonDegrees = float(data.lon) * std::pow(10, -7);
+        int lonMinutesTemp = float(data.lon - (lonDegrees * std::pow(10, 7))) * 60;
+        int lonMinutes = lonMinutesTemp * std::pow(10, -7);
+        float lonSeconds = float(lonMinutesTemp - (lonMinutes * std::pow(10, 7))) * pow(10, -7) * 60;
+
+        String prettyLon = String(lonDegrees) + "° " + String(lonMinutes) + "\' " + String(lonSeconds) + "\""; 
+
+        return {prettyLat, prettyLon};
     }
 }

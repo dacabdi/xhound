@@ -165,12 +165,12 @@ namespace GNSS_RTK_ROVER
         CoordinatesView(Canvas* can, Vector2D pos);
         void draw() override;
         void setPowerSaving(bool on);
-        void setCoordinates(long _lat, long _lon, long _height);
+        void setCoordinates(String _lat, String _lon, long _height);
 
         private:
         bool powerSaving;
-        long lat;
-        long lon;
+        String lat;
+        String lon;
         long height;
     };
 
