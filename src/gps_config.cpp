@@ -1,5 +1,6 @@
 #include <functional>
 #include <utility>
+#include <cstdlib>
 
 #include "SparkFun_u-blox_GNSS_Arduino_Library.h"
 #include "gps_config.h"
@@ -110,7 +111,7 @@ namespace GNSS_RTK_ROVER
         resolveSIV();
         resolveDOP();
         resolveReferenceStation();
-    
+
         onUpdate(data);
     }
 
@@ -128,7 +129,7 @@ namespace GNSS_RTK_ROVER
     {
         data.lat   = gnss.getHighResLatitude();
         data.lon   = gnss.getHighResLongitude();
-        data.alt   = gnss.getAltitudeMSL() * 0.00328084;
+        data.alt   = double(gnss.getAltitudeMSL()) * 0.00328084;
     }
 
     void GPSConfig::connect()
@@ -321,17 +322,19 @@ namespace GNSS_RTK_ROVER
     {
         int latDegrees = float(data.lat) * std::pow(10, -7);
         int latMinutesTemp = float(data.lat - (latDegrees * std::pow(10, 7))) * 60;
+        latMinutesTemp = latMinutesTemp > 0 ? latMinutesTemp : -1 * latMinutesTemp;
         int latMinutes = latMinutesTemp * std::pow(10, -7);
         float latSeconds = float(latMinutesTemp - (latMinutes * std::pow(10, 7))) * pow(10, -7) * 60;
 
-        String prettyLat = String(latDegrees) + "° " + String(latMinutes) + "\' " + String(latSeconds) + "\""; 
+        String prettyLat = String(latDegrees) + " " + String(latMinutes) + "\'" + String(latSeconds) + "\""; 
 
         int lonDegrees = float(data.lon) * std::pow(10, -7);
         int lonMinutesTemp = float(data.lon - (lonDegrees * std::pow(10, 7))) * 60;
+        lonMinutesTemp = lonMinutesTemp > 0 ? lonMinutesTemp : -1 * lonMinutesTemp;
         int lonMinutes = lonMinutesTemp * std::pow(10, -7);
         float lonSeconds = float(lonMinutesTemp - (lonMinutes * std::pow(10, 7))) * pow(10, -7) * 60;
 
-        String prettyLon = String(lonDegrees) + "° " + String(lonMinutes) + "\' " + String(lonSeconds) + "\""; 
+        String prettyLon = String(lonDegrees) + " " + String(lonMinutes) + "\'" + String(lonSeconds) + "\""; 
 
         return {prettyLat, prettyLon};
     }
@@ -342,7 +345,7 @@ namespace GNSS_RTK_ROVER
         {
             data.refID = gnss.packetUBXNAVRELPOSNED->data.refStationId;
             data.refDistance = gnss.packetUBXNAVRELPOSNED->data.relPosLength;
-        } 
+        }
         else
         {
             data.refID = 0;

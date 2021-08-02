@@ -168,10 +168,10 @@ namespace GNSS_RTK_ROVER
         CoordinatesView(Canvas* can, Vector2D pos);
         void draw() override;
         void setPowerSaving(bool on);
-        void setCoordinates(String _lat, String _lon, long _height);
+        void setCoordinates(String _lat, String _lon, float _height);
 
         private:
-        enum ViewSection 
+        enum ViewSection
         {
             Header,
             Latitude,
@@ -184,7 +184,7 @@ namespace GNSS_RTK_ROVER
         bool powerSaving;
         String lat;
         String lon;
-        long height;
+        float height;
     };
 
     class SIVView : public Component

@@ -182,8 +182,8 @@ namespace GNSS_RTK_ROVER
 
         // Header
         this->clear(Header);
-        this->canvas->printBitMap({this->position.x + 34, this->position.y}, {56, 6}, coordinates_text);
-        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {128, 1}, division_line_h_128x1);
+        this->canvas->printBitMap({this->position.x + 34, this->position.y}, {6, 56}, coordinates_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
 
         // Latitude
         this->clear(Latitude);
@@ -217,7 +217,7 @@ namespace GNSS_RTK_ROVER
         this->powerSaving = on;
     }
 
-    void CoordinatesView::setCoordinates(String _lat, String _lon, long _height)
+    void CoordinatesView::setCoordinates(String _lat, String _lon, float _height)
     {
         lat = _lat;
         lon = _lon;
@@ -229,16 +229,16 @@ namespace GNSS_RTK_ROVER
         switch(section)
         {
             case Header:
-                this->canvas->erase(this->position, {128, 8});
+                this->canvas->erase(this->position, {8, 128});
                 break;
             case Latitude:
-                this->canvas->erase({this->position.x, this->position.y +  9}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y +  9}, {8, 128});
                 break;
             case Longitude:
-                this->canvas->erase({this->position.x, this->position.y + 17}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y + 17}, {8, 128});
                 break;
             case Altitude:
-                this->canvas->erase({this->position.x, this->position.y + 25}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y + 25}, {8, 128});
                 break;
         }
     }
@@ -307,20 +307,21 @@ namespace GNSS_RTK_ROVER
 
         // Header
         this->clear(Header);
-        this->canvas->printBitMap({this->position.x + 41, this->position.y}, {42, 6}, base_info_text);
-        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {128, 1}, division_line_h_128x1);
+        this->canvas->printBitMap({this->position.x + 41, this->position.y}, {6, 42}, base_info_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
 
+        auto idStr = this->id < 999 ? "0" + String(this->id) : String(this->id);
 
         // Base ID
         this->clear(BaseID);
         this->canvas->printText("Base ID: ", {this->position.x + 4, this->position.y + 12});
         if(!this->powerSaving && this->id != 0)
-            this->canvas->printFloatVariable(this->id, {this->position.x + 58, this->position.y + 12});
+            this->canvas->printText(idStr.c_str(), {this->position.x + 58, this->position.y + 12});
         else
-            this->canvas->printText("N/A", {this->position.x + 58, this->position.y});
+            this->canvas->printText("N/A", {this->position.x + 58, this->position.y + 12});
 
         // Base Distance
-        auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + " mi";
+        auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + "mi";
 
         this->clear(Distance);
         this->canvas->printText("Distance: ", {this->position.x + 4, this->position.y + 21});
@@ -347,13 +348,13 @@ namespace GNSS_RTK_ROVER
         switch(section)
         {
             case Header:
-                this->canvas->erase(this->position, {128, 8});
+                this->canvas->erase(this->position, {8, 128});
                 break;
             case BaseID:
-                this->canvas->erase({this->position.x, this->position.y +  12}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y +  12}, {8, 128});
                 break;
             case Distance:
-                this->canvas->erase({this->position.x, this->position.y + 21}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y + 21}, {1, 128});
                 break;
         }
     }
@@ -368,8 +369,8 @@ namespace GNSS_RTK_ROVER
 
         // Header
         this->clear(Header);
-        this->canvas->printBitMap({this->position.x + 36, this->position.y}, {52, 6}, device_info_text);
-        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {128, 1}, division_line_h_128x1);
+        this->canvas->printBitMap({this->position.x + 36, this->position.y}, {6, 52}, device_info_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
 
         // Model
         this->clear(Model);
@@ -389,16 +390,16 @@ namespace GNSS_RTK_ROVER
         switch(section)
         {
             case Header:
-                this->canvas->erase(this->position, {128, 8});
+                this->canvas->erase(this->position, {8, 128});
                 break;
             case Model:
-                this->canvas->erase({this->position.x, this->position.y +  9}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y +  9}, {8, 128});
                 break;
             case SN:
-                this->canvas->erase({this->position.x, this->position.y + 17}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y + 17}, {8, 128});
                 break;
             case BTID:
-                this->canvas->erase({this->position.x, this->position.y + 25}, {128, 8});
+                this->canvas->erase({this->position.x, this->position.y + 25}, {8, 128});
                 break;
         }
     }

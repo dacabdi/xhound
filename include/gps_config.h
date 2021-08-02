@@ -36,7 +36,7 @@ namespace GNSS_RTK_ROVER
             Mode mode;
             long lat;
             long lon;
-            long alt;
+            float_t alt;
             uint16_t siv;
             float_t dop;
             uint16_t refID;

@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cstdlib>
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -113,6 +114,11 @@ void createScreens()
     mainScreen->embed(solutionTypeView);
     mainScreen->embed(sivView);
     mainScreen->embed(dopView);
+
+    while(true)
+    {
+
+    }
 
     // Coordinates screen
     coordinatesView = new CoordinatesView(display, {0, 0});
@@ -233,6 +239,8 @@ void start()
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
+            coordinatesView->setPowerSaving(true);
+            coordinatesView->draw();
             sivView->setPowerSaving(true);
             sivView->draw();
             dopView->setPowerSaving(true);
@@ -240,14 +248,9 @@ void start()
             baseInfoView->setPowerSaving(true);
             baseInfoView->draw();
 
-            if(GPSConfig::getMode() == GPSConfig::Rover)
-            {
-                GPSConfig::configureDefault();
-                GPSConfig::Sleep();
-                coordinatesView->setPowerSaving(true);
-                sivView->setPowerSaving(true);
-                dopView->setPowerSaving(true);
-            }
+            GPSConfig::configureDefault();
+            GPSConfig::Sleep();
+
             buzzer.buzzBTDisconnected();
         });
     Serial.println("Finished setting up bluetooth monitor");
@@ -454,7 +457,7 @@ void setup()
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
-    schedule.AddEvent(2000, GPSConfig::checkStatus);
+    schedule.AddEvent(2500, GPSConfig::checkStatus);
     schedule.AddEvent(2000, ScreenManager::refresh);
 
     Serial.println("Finished Setup");

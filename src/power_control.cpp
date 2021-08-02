@@ -48,14 +48,17 @@ namespace GNSS_RTK_ROVER
 
         if(now - powerSwitchLastPressed <= 1000)
         {
+            Serial.print("increasing epo count to:");
+            Serial.println(epoweroffCount + 1);
             epoweroffCount++;
         } else {
+            Serial.println("reseting epo count");
             epoweroffCount = 0;
         }
         if(epoweroffCount >= 5)
         {
-            Serial.println("Powering Off Forcefully");
-            turnOffPowerModule();
+            Serial.println("Restarting");
+            NVIC_SystemReset();
         }
 
         Serial.println("OnOff Switch Pressed");
