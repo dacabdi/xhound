@@ -298,7 +298,7 @@ namespace GNSS_RTK_ROVER
     }
 
     BaseInfoView::BaseInfoView(Canvas* can, Vector2D pos)
-        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), id(0), distance(0) {}
+        : Component(can, pos, Dimensions2D{BASEINFOVIEW_HEIGHT, BASEINFOVIEW_WIDTH}), id(0), distance(0) {}
 
     void BaseInfoView::draw()
     {
@@ -354,6 +354,51 @@ namespace GNSS_RTK_ROVER
                 break;
             case Distance:
                 this->canvas->erase({this->position.x, this->position.y + 21}, {128, 8});
+                break;
+        }
+    }
+
+    DeviceInfoView::DeviceInfoView(Canvas* can, Vector2D pos, String model, String sn, String btID)
+        : Component(can, pos, Dimensions2D{DEVICEINFOVIEW_HEIGHT, DEVICEINFOVIEW_WIDTH}), model(model), sn(sn), btID(btID) {}
+
+    void DeviceInfoView::draw()
+    {
+        if(!enabled)
+            return;
+
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 36, this->position.y}, {52, 6}, device_info_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {128, 1}, division_line_h_128x1);
+
+        // Model
+        this->clear(Model);
+        this->canvas->printText((String("Model: ") + model).c_str(), {this->position.x, this->position.y + 9});
+
+        // SN
+        this->clear(SN);
+        this->canvas->printText((String("SN: ") + sn).c_str(), {this->position.x, this->position.y + 17});
+
+        // BTID
+        this->clear(BTID);
+        this->canvas->printText((String("BTID: ") + btID).c_str(), {this->position.x, this->position.y + 25});
+    }
+
+    void DeviceInfoView::clear(DeviceInfoView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {128, 8});
+                break;
+            case Model:
+                this->canvas->erase({this->position.x, this->position.y +  9}, {128, 8});
+                break;
+            case SN:
+                this->canvas->erase({this->position.x, this->position.y + 17}, {128, 8});
+                break;
+            case BTID:
+                this->canvas->erase({this->position.x, this->position.y + 25}, {128, 8});
                 break;
         }
     }

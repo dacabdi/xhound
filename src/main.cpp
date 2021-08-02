@@ -92,6 +92,9 @@ CoordinatesView* coordinatesView;
 CompositeComponent* baseInfoScreen;
 BaseInfoView* baseInfoView;
 
+CompositeComponent* deviceInfoScreen;
+DeviceInfoView* deviceInfoView;
+
 Schedule schedule;
 
 void createScreens()
@@ -112,17 +115,21 @@ void createScreens()
     mainScreen->embed(dopView);
 
     // Coordinates screen
-    coordinatesView = new CoordinatesView(display, {0, 4});
+    coordinatesView = new CoordinatesView(display, {0, 0});
     coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     coordinatesScreen->embed(coordinatesView);
 
     // BaseInfo screen
-    baseInfoView = new BaseInfoView(display, {0, 6});
+    baseInfoView = new BaseInfoView(display, {0, 0});
     baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     baseInfoScreen->embed(baseInfoView);
 
+    // DeviceInfo screen
+    deviceInfoView = new DeviceInfoView(display, {0, 0}, String(model), String(sn), String(btID));
+    deviceInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128}); 
+    deviceInfoScreen->embed(deviceInfoView);
 
-    ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen});
+    ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen, deviceInfoScreen});
 
     pinMode(RIGHTKEYPIN, INPUT_PULLUP);
     pinMode(LEFTKEYPIN, INPUT_PULLUP);
@@ -150,6 +157,10 @@ void deleteScreens()
     // BaseInfo screen
     delete baseInfoScreen;
     delete baseInfoView;
+
+    // DeviceInfo screen
+    delete deviceInfoScreen;
+    delete deviceInfoView;
 
     // Logo
     delete logoView;
