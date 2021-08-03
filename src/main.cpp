@@ -95,6 +95,9 @@ DOPView* dopView;
 CompositeComponent* coordinatesScreen;
 CoordinatesView* coordinatesView;
 
+CompositeComponent* dopScreen;
+DOPScreenView* dopScreenView;
+
 CompositeComponent* baseInfoScreen;
 BaseInfoView* baseInfoView;
 
@@ -125,6 +128,11 @@ void createScreens()
     coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     coordinatesScreen->embed(coordinatesView);
 
+    // DOP screen
+    dopScreenView = new DOPScreenView(display, {0, 0});
+    dopScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    dopScreen->embed(dopScreenView);
+
     // BaseInfo screen
     baseInfoView = new BaseInfoView(display, {0, 0});
     baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
@@ -135,7 +143,7 @@ void createScreens()
     deviceInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128}); 
     deviceInfoScreen->embed(deviceInfoView);
 
-    ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen, deviceInfoScreen});
+    ScreenManager::setup({mainScreen, coordinatesScreen, dopScreen, baseInfoScreen, deviceInfoScreen});
 
     pinMode(RIGHTKEYPIN, INPUT_PULLUP);
     pinMode(LEFTKEYPIN, INPUT_PULLUP);
@@ -159,6 +167,10 @@ void deleteScreens()
     // Coordinates screen
     delete coordinatesScreen;
     delete coordinatesView;
+
+    // Coordinates screen
+    delete dopScreen;
+    delete dopScreenView;
 
     // BaseInfo screen
     delete baseInfoScreen;
@@ -228,6 +240,8 @@ void start()
             GPSConfig::WakeUp();
             coordinatesView->setPowerSaving(false);
             coordinatesView->draw();
+            dopScreenView->setPowerSaving(false);
+            dopScreenView->draw();
             sivView->setPowerSaving(false);
             sivView->draw();
             dopView->setPowerSaving(false);
@@ -241,6 +255,8 @@ void start()
             btStatusView->draw();
             coordinatesView->setPowerSaving(true);
             coordinatesView->draw();
+            dopScreenView->setPowerSaving(true);
+            dopScreenView->draw();
             sivView->setPowerSaving(true);
             sivView->draw();
             dopView->setPowerSaving(true);
@@ -330,10 +346,13 @@ void start()
             coordinatesView->setCoordinates(latlon.first, latlon.second, data.alt);
             coordinatesView->draw();
 
+            dopScreenView->setDOP(data.hdop, data.vdop, data.pdop);
+            dopScreenView->draw();
+
             sivView->setSIV(data.siv);
             sivView->draw();
 
-            dopView->setDOP(data.dop);
+            dopView->setDOP(data.pdop);
             dopView->draw();
 
             baseInfoView->setInfo(data.refID, data.refDistance);

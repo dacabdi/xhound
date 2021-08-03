@@ -39,6 +39,9 @@
 #define COORDINATESVIEW_WIDTH 128
 #define COORDINATESVIEW_HEIGHT 32
 
+#define DOPSCREENVIEW_WIDTH 128
+#define DOPSCREENVIEW_HEIGHT 32
+
 #define BASEINFOVIEW_WIDTH 128
 #define BASEINFOVIEW_HEIGHT 32
 
@@ -185,6 +188,32 @@ namespace GNSS_RTK_ROVER
         String lat;
         String lon;
         float height;
+    };
+
+    class DOPScreenView : public Component
+    {
+        public:
+        DOPScreenView() {}
+        DOPScreenView(Canvas* can, Vector2D pos);
+        void draw() override;
+        void setPowerSaving(bool on);
+        void setDOP(float _hdop, float _vdop, float _pdop);
+
+        private:
+        enum ViewSection
+        {
+            Header,
+            HDOP,
+            VDOP,
+            PDOP
+        };
+
+        void clear(ViewSection section);
+
+        bool powerSaving;
+        float hdop;
+        float vdop;
+        float pdop;
     };
 
     class SIVView : public Component

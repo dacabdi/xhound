@@ -314,7 +314,9 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::resolveDOP()
     {
-        data.dop = ((float)gnss.getPDOP()/100);
+        data.hdop = ((float)gnss.getHorizontalDOP()/100);
+        data.vdop = ((float)gnss.getVerticalDOP()/100);
+        data.pdop = ((float)gnss.getPDOP()/100);
     }
 
     // lat, lon
