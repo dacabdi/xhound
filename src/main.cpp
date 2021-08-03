@@ -115,11 +115,6 @@ void createScreens()
     mainScreen->embed(sivView);
     mainScreen->embed(dopView);
 
-    while(true)
-    {
-
-    }
-
     // Coordinates screen
     coordinatesView = new CoordinatesView(display, {0, 0});
     coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
