@@ -10,6 +10,7 @@ namespace GNSS_RTK_ROVER
     int CPUPowerController::chargingStatePin;
     bool CPUPowerController::chargingState;
     bool CPUPowerController::justChangedOnOff;
+    uint8_t CPUPowerController::epoweroffCount;
     uint64_t CPUPowerController::powerSwitchLastPressed;
     std::function<void(bool)> CPUPowerController::onTurnOnOff;
     std::function<void(bool)> CPUPowerController::onChargingChanged;
@@ -28,6 +29,7 @@ namespace GNSS_RTK_ROVER
         onOffState = false;
         chargingState = false;
         onTurnOnOff = _onTurnOnOff;
+        epoweroffCount = 0;
         onChargingChanged = _onChargingChanged;
         justChangedOnOff = false;
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, FALLING);
@@ -43,6 +45,21 @@ namespace GNSS_RTK_ROVER
         auto now = millis();
         if(now - powerSwitchLastPressed <= 100) // Debouncer
             return;
+
+        if(now - powerSwitchLastPressed <= 1000)
+        {
+            Serial.print("increasing epo count to:");
+            Serial.println(epoweroffCount + 1);
+            epoweroffCount++;
+        } else {
+            Serial.println("reseting epo count");
+            epoweroffCount = 0;
+        }
+        if(epoweroffCount >= 5)
+        {
+            Serial.println("Restarting");
+            NVIC_SystemReset();
+        }
 
         Serial.println("OnOff Switch Pressed");
         if(onOffState)

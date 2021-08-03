@@ -36,9 +36,11 @@ namespace GNSS_RTK_ROVER
             Mode mode;
             long lat;
             long lon;
-            long alt;
+            float_t alt;
             uint16_t siv;
             float_t dop;
+            uint16_t refID;
+            int32_t refDistance;
         };
 
         static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
@@ -51,6 +53,7 @@ namespace GNSS_RTK_ROVER
 
         static SolutionType getSolutionType();
         static Mode getMode();
+        static std::pair<String, String> getLatLonHRPretty();
 
         private:
         static void connect();
@@ -64,13 +67,13 @@ namespace GNSS_RTK_ROVER
         static void configureAsBase();
         static void configureDisableBase();
 
-        static void resolveMode();
         static void resolveSolutionType();
         static void resolveCoordinates();
         static void resolveSIV();
         static void resolveDOP();
+        static void resolveReferenceStation();
 
-        static SFE_UBLOX_GPS gps;
+        static SFE_UBLOX_GNSS gnss;
         static int serialBaudUart1;
         static int serialBaudUart2;
 

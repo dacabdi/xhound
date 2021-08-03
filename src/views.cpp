@@ -82,7 +82,7 @@ namespace GNSS_RTK_ROVER
         : Component(can, pos, Dimensions2D{SOLUTIONTYPEVIEW_HEIGHT, SOLUTIONTYPEVIEW_WIDTH})
     {
         this->status = NoFix;
-        this->statusBitmaps[GnssOff] = no_fix_48x13;
+        this->statusBitmaps[GnssOff] = gnss_off_48x13;
         this->statusBitmaps[NoFix] = no_fix_48x13;
         this->statusBitmaps[TwoDFix] = twoD_fix_48x13;
         this->statusBitmaps[ThreeDFix] = threeD_fix_48x13;
@@ -180,24 +180,36 @@ namespace GNSS_RTK_ROVER
         if(!enabled)
             return;
 
-        this->clear();
-        this->canvas->printText("Lat: ", {this->position.x, this->position.y});
-        if(!this->powerSaving)
-            this->canvas->printFloatVariable(this->lat, {this->position.x + 30, this->position.y});
-        else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y});
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 34, this->position.y}, {6, 56}, coordinates_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
 
-        this->canvas->printText("Lon: ", {this->position.x, this->position.y + 12});
+        // Latitude
+        this->clear(Latitude);
+        this->canvas->printText("Lat: ", {this->position.x + 4, this->position.y + 9});
         if(!this->powerSaving)
-            this->canvas->printFloatVariable(this->lon, {this->position.x + 30, this->position.y + 12});
+            this->canvas->printText(this->lat.c_str(), {this->position.x + 34, this->position.y + 9});
         else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 12});
+            this->canvas->printText("N/A", {this->position.x + 34, this->position.y + 9});
 
-        this->canvas->printText("Alt: ", {this->position.x, this->position.y + 24});
+        // Longitude
+        this->clear(Longitude);
+        this->canvas->printText("Lon: ", {this->position.x + 4, this->position.y + 17});
         if(!this->powerSaving)
-            this->canvas->printFloatVariable(this->height, {this->position.x + 30, this->position.y + 24});
+            this->canvas->printText(this->lon.c_str(), {this->position.x + 34, this->position.y + 17});
         else
-            this->canvas->printText("N/A", {this->position.x + 30, this->position.y + 24});
+            this->canvas->printText("N/A", {this->position.x + 34, this->position.y + 17});
+
+        // Altitude
+        String heightStr = String(this->height) + " ft";
+
+        this->clear(Altitude);
+        this->canvas->printText("Alt: ", {this->position.x + 4, this->position.y + 25});
+        if(!this->powerSaving)
+            this->canvas->printText(heightStr.c_str(), {this->position.x + 34, this->position.y + 25});
+        else
+            this->canvas->printText("N/A", {this->position.x + 34, this->position.y + 25});
     }
 
     void CoordinatesView::setPowerSaving(bool on)
@@ -205,13 +217,31 @@ namespace GNSS_RTK_ROVER
         this->powerSaving = on;
     }
 
-    void CoordinatesView::setCoordinates(long _lat, long _lon, long _height)
+    void CoordinatesView::setCoordinates(String _lat, String _lon, float _height)
     {
         lat = _lat;
         lon = _lon;
         height = _height;
     }
 
+    void CoordinatesView::clear(CoordinatesView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {8, 128});
+                break;
+            case Latitude:
+                this->canvas->erase({this->position.x, this->position.y +  9}, {8, 128});
+                break;
+            case Longitude:
+                this->canvas->erase({this->position.x, this->position.y + 17}, {8, 128});
+                break;
+            case Altitude:
+                this->canvas->erase({this->position.x, this->position.y + 25}, {8, 128});
+                break;
+        }
+    }
 
     SIVView::SIVView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{SIVVIEW_HEIGHT, SIVVIEW_WIDTH}), siv(0), powerSaving(true) {}
@@ -268,24 +298,110 @@ namespace GNSS_RTK_ROVER
     }
 
     BaseInfoView::BaseInfoView(Canvas* can, Vector2D pos)
-        : Component(can, pos, Dimensions2D{COORDINATESVIEW_HEIGHT, COORDINATESVIEW_WIDTH}), id(0), distance(0) {}
+        : Component(can, pos, Dimensions2D{BASEINFOVIEW_HEIGHT, BASEINFOVIEW_WIDTH}), id(0), distance(0) {}
 
     void BaseInfoView::draw()
     {
         if(!enabled)
             return;
 
-        this->clear();
-        this->canvas->printText("Base ID: ", {this->position.x, this->position.y});
-        this->canvas->printFloatVariable(this->id, {this->position.x + 54, this->position.y});
-        this->canvas->printText("Distance: ", {this->position.x, this->position.y + 12});
-        this->canvas->printFloatVariable(this->distance, {this->position.x + 60, this->position.y + 12});
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 41, this->position.y}, {6, 42}, base_info_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
+
+        auto idStr = this->id < 999 ? "0" + String(this->id) : String(this->id);
+
+        // Base ID
+        this->clear(BaseID);
+        this->canvas->printText("Base ID: ", {this->position.x + 4, this->position.y + 12});
+        if(!this->powerSaving && this->id != 0)
+            this->canvas->printText(idStr.c_str(), {this->position.x + 58, this->position.y + 12});
+        else
+            this->canvas->printText("N/A", {this->position.x + 58, this->position.y + 12});
+
+        // Base Distance
+        auto distanceMi = String(float(distance * (6.21371 * pow(10, -6)))) + "mi";
+
+        this->clear(Distance);
+        this->canvas->printText("Distance: ", {this->position.x + 4, this->position.y + 21});
+        if(!this->powerSaving && this->id != 0)
+            this->canvas->printText(distanceMi.c_str(), {this->position.x + 64, this->position.y + 21});
+        else
+            this->canvas->printText("N/A", {this->position.x + 64, this->position.y + 21});
+
+    }
+
+    void BaseInfoView::setPowerSaving(bool on)
+    {
+        this->powerSaving = on;
     }
 
     void BaseInfoView::setInfo(long _id, long _distance)
     {
         id = _id;
         distance = _distance;
+    }
+
+    void BaseInfoView::clear(BaseInfoView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {8, 128});
+                break;
+            case BaseID:
+                this->canvas->erase({this->position.x, this->position.y +  12}, {8, 128});
+                break;
+            case Distance:
+                this->canvas->erase({this->position.x, this->position.y + 21}, {1, 128});
+                break;
+        }
+    }
+
+    DeviceInfoView::DeviceInfoView(Canvas* can, Vector2D pos, String model, String sn, String btID)
+        : Component(can, pos, Dimensions2D{DEVICEINFOVIEW_HEIGHT, DEVICEINFOVIEW_WIDTH}), model(model), sn(sn), btID(btID) {}
+
+    void DeviceInfoView::draw()
+    {
+        if(!enabled)
+            return;
+
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 36, this->position.y}, {6, 52}, device_info_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
+
+        // Model
+        this->clear(Model);
+        this->canvas->printText((String("Model: ") + model).c_str(), {this->position.x + 4, this->position.y + 9});
+
+        // SN
+        this->clear(SN);
+        this->canvas->printText((String("SN: ") + sn).c_str(), {this->position.x + 4, this->position.y + 17});
+
+        // BTID
+        this->clear(BTID);
+        this->canvas->printText((String("BTID: ") + btID).c_str(), {this->position.x + 4, this->position.y + 25});
+    }
+
+    void DeviceInfoView::clear(DeviceInfoView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {8, 128});
+                break;
+            case Model:
+                this->canvas->erase({this->position.x, this->position.y +  9}, {8, 128});
+                break;
+            case SN:
+                this->canvas->erase({this->position.x, this->position.y + 17}, {8, 128});
+                break;
+            case BTID:
+                this->canvas->erase({this->position.x, this->position.y + 25}, {8, 128});
+                break;
+        }
     }
 
     LogoView::LogoView(Canvas* can, Vector2D pos)

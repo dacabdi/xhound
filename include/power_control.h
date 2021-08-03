@@ -28,6 +28,7 @@ namespace GNSS_RTK_ROVER
         static bool chargingState;
 
         static uint64_t powerSwitchLastPressed;
+        static uint8_t epoweroffCount;
         static bool justChangedOnOff;
         static std::function<void(bool)> onTurnOnOff;
         static std::function<void(bool)> onChargingChanged;

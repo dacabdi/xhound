@@ -22,6 +22,7 @@ namespace GNSS_RTK_ROVER
         connect();
         m_display.clearDisplay();
         m_display.display();
+        m_display.setTextWrap(false);
     }
 
     void DisplaySSD1306::connect()

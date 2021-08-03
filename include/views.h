@@ -36,11 +36,14 @@
 #define DOPVIEW_WIDTH 64
 #define DOPVIEW_HEIGHT 10
 
-#define COORDINATESVIEW_WIDTH 120
-#define COORDINATESVIEW_HEIGHT 30
-
 #define COORDINATESVIEW_WIDTH 128
 #define COORDINATESVIEW_HEIGHT 32
+
+#define BASEINFOVIEW_WIDTH 128
+#define BASEINFOVIEW_HEIGHT 32
+
+#define DEVICEINFOVIEW_WIDTH 128
+#define DEVICEINFOVIEW_HEIGHT 32
 
 namespace GNSS_RTK_ROVER
 {
@@ -165,13 +168,23 @@ namespace GNSS_RTK_ROVER
         CoordinatesView(Canvas* can, Vector2D pos);
         void draw() override;
         void setPowerSaving(bool on);
-        void setCoordinates(long _lat, long _lon, long _height);
+        void setCoordinates(String _lat, String _lon, float _height);
 
         private:
+        enum ViewSection
+        {
+            Header,
+            Latitude,
+            Longitude,
+            Altitude
+        };
+
+        void clear(ViewSection section);
+
         bool powerSaving;
-        long lat;
-        long lon;
-        long height;
+        String lat;
+        String lon;
+        float height;
     };
 
     class SIVView : public Component
@@ -208,11 +221,45 @@ namespace GNSS_RTK_ROVER
         BaseInfoView() {}
         BaseInfoView(Canvas* can, Vector2D pos);
         void draw() override;
+        void setPowerSaving(bool on);
         void setInfo(long id, long distance);
 
         private:
+        enum ViewSection 
+        {
+            Header,
+            BaseID,
+            Distance
+        };
+
+        void clear(ViewSection section);
+
+        bool powerSaving;
         long id;
         long distance;
+    };
+
+    class DeviceInfoView : public Component
+    {
+        public:
+        DeviceInfoView() {}
+        DeviceInfoView(Canvas* can, Vector2D pos, String model, String sn, String btID);
+        void draw() override;
+
+        private:
+        enum ViewSection 
+        {
+            Header,
+            Model,
+            SN,
+            BTID
+        };
+
+        void clear(ViewSection section);
+
+        const String model;
+        const String sn;
+        const String btID;
     };
 
     class LogoView : public Component

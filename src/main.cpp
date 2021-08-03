@@ -5,13 +5,15 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <utility>
+#include <cstdlib>
 
 #include <Arduino.h>
 #include <Wire.h>
 #include <Timer.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <SparkFun_Ublox_Arduino_Library.h>
+#include "SparkFun_u-blox_GNSS_Arduino_Library.h"
 #include <FlashStorage.h>
 
 #include "power_control.h"
@@ -32,6 +34,11 @@
 #include "screens.h"
 #include "views.h"
 #include "views_menu.h"
+
+// Device Info
+constexpr char model[] = "xHound v2.1";
+constexpr char sn[]    = "XH-00000001";
+constexpr char btID[]  = "XH-12345678";
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
@@ -73,7 +80,7 @@ Canvas* display;
 LogoView* logoView;
 
 CompositeComponent* mainScreen;
-DivisionLineView* divisionLineView;
+DivisionLineView* mainDivisionLineView;
 BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
@@ -86,19 +93,22 @@ CoordinatesView* coordinatesView;
 CompositeComponent* baseInfoScreen;
 BaseInfoView* baseInfoView;
 
+CompositeComponent* deviceInfoScreen;
+DeviceInfoView* deviceInfoView;
+
 Schedule schedule;
 
 void createScreens()
 {
     // Main screen
-    divisionLineView = new DivisionLineView(display, {0, 17});
+    mainDivisionLineView = new DivisionLineView(display, {0, 17});
     batteryView = new BatteryView(display, {114, 1});
     btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
     sivView = new SIVView(display, {0, 22});
     dopView = new DOPView(display, {65, 22});
     mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
-    mainScreen->embed(divisionLineView);
+    mainScreen->embed(mainDivisionLineView);
     mainScreen->embed(batteryView);
     mainScreen->embed(btStatusView);
     mainScreen->embed(solutionTypeView);
@@ -115,7 +125,12 @@ void createScreens()
     baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     baseInfoScreen->embed(baseInfoView);
 
-    ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen});
+    // DeviceInfo screen
+    deviceInfoView = new DeviceInfoView(display, {0, 0}, String(model), String(sn), String(btID));
+    deviceInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128}); 
+    deviceInfoScreen->embed(deviceInfoView);
+
+    ScreenManager::setup({mainScreen, coordinatesScreen, baseInfoScreen, deviceInfoScreen});
 
     pinMode(RIGHTKEYPIN, INPUT_PULLUP);
     pinMode(LEFTKEYPIN, INPUT_PULLUP);
@@ -129,7 +144,7 @@ void deleteScreens()
 
     // Main screen
     delete mainScreen;
-    delete divisionLineView;
+    delete mainDivisionLineView;
     delete batteryView;
     delete btStatusView;
     delete solutionTypeView;
@@ -143,6 +158,10 @@ void deleteScreens()
     // BaseInfo screen
     delete baseInfoScreen;
     delete baseInfoView;
+
+    // DeviceInfo screen
+    delete deviceInfoScreen;
+    delete deviceInfoView;
 
     // Logo
     delete logoView;
@@ -199,31 +218,34 @@ void start()
             Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
-            sivView->setSIV(235);
-            sivView->draw();
             buzzer.buzzBTConnected();
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
             coordinatesView->setPowerSaving(false);
+            coordinatesView->draw();
             sivView->setPowerSaving(false);
+            sivView->draw();
             dopView->setPowerSaving(false);
+            dopView->draw();
+            baseInfoView->setPowerSaving(false);
+            baseInfoView->draw();
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
+            coordinatesView->setPowerSaving(true);
+            coordinatesView->draw();
             sivView->setPowerSaving(true);
             sivView->draw();
             dopView->setPowerSaving(true);
             dopView->draw();
-            if(GPSConfig::getMode() == GPSConfig::Rover)
-            {
-                GPSConfig::configureDefault();
-                GPSConfig::Sleep();
-                coordinatesView->setPowerSaving(true);
-                sivView->setPowerSaving(true);
-                dopView->setPowerSaving(true);
-            }
+            baseInfoView->setPowerSaving(true);
+            baseInfoView->draw();
+
+            GPSConfig::configureDefault();
+            GPSConfig::Sleep();
+
             buzzer.buzzBTDisconnected();
         });
     Serial.println("Finished setting up bluetooth monitor");
@@ -278,7 +300,8 @@ void start()
             }
             solutionTypeView->draw();
 
-            coordinatesView->setCoordinates(data.lat, data.lon, data.alt);
+            auto latlon = GPSConfig::getLatLonHRPretty();
+            coordinatesView->setCoordinates(latlon.first, latlon.second, data.alt);
             coordinatesView->draw();
 
             sivView->setSIV(data.siv);
@@ -286,6 +309,9 @@ void start()
 
             dopView->setDOP(data.dop);
             dopView->draw();
+
+            baseInfoView->setInfo(data.refID, data.refDistance);
+            baseInfoView->draw();
         });
 
     logoView->draw();
@@ -426,7 +452,7 @@ void setup()
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
     schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
-    schedule.AddEvent(2000, GPSConfig::checkStatus);
+    schedule.AddEvent(2500, GPSConfig::checkStatus);
     schedule.AddEvent(2000, ScreenManager::refresh);
 
     Serial.println("Finished Setup");

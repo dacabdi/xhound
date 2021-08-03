@@ -4,10 +4,6 @@
 			"name": "xhound",
 			"path": "."
 		},
-		{
-			"name": "PoolLightsController",
-			"path": "../../Documents/PlatformIO/Projects/PoolLightsController"
-		}
 	],
 	"settings": {
 		"files.associations": {
