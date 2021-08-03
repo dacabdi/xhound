@@ -38,7 +38,9 @@ namespace GNSS_RTK_ROVER
             long lon;
             float_t alt;
             uint16_t siv;
-            float_t dop;
+            float_t hdop;
+            float_t vdop;
+            float_t pdop;
             uint16_t refID;
             int32_t refDistance;
         };

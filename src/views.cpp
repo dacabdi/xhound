@@ -243,6 +243,75 @@ namespace GNSS_RTK_ROVER
         }
     }
 
+    DOPScreenView::DOPScreenView(Canvas* can, Vector2D pos)
+        : Component(can, pos, Dimensions2D{DOPSCREENVIEW_HEIGHT, DOPSCREENVIEW_WIDTH}), hdop(0), vdop(0), pdop(0), powerSaving(true) {}
+
+    void DOPScreenView::draw()
+    {
+        if(!enabled)
+            return;
+
+        // Header
+        this->clear(Header);
+        this->canvas->printBitMap({this->position.x + 15, this->position.y}, {6, 97}, dop_text);
+        this->canvas->printBitMap({this->position.x, this->position.y + 7}, {1, 128}, division_line_h_128x1);
+
+        // HDOP
+        this->clear(HDOP);
+        this->canvas->printText("HDOP: ", {this->position.x + 4, this->position.y + 9});
+        if(!this->powerSaving)
+            this->canvas->printFloatVariable(this->hdop, {this->position.x + 35, this->position.y + 9});
+        else
+            this->canvas->printText("N/A", {this->position.x + 35, this->position.y + 9});
+
+        // VDOP
+        this->clear(VDOP);
+        this->canvas->printText("VDOP: ", {this->position.x + 4, this->position.y + 17});
+        if(!this->powerSaving)
+            this->canvas->printFloatVariable(this->vdop, {this->position.x + 35, this->position.y + 17});
+        else
+            this->canvas->printText("N/A", {this->position.x + 35, this->position.y + 17});
+
+        // PDOP
+        this->clear(PDOP);
+        this->canvas->printText("PDOP: ", {this->position.x + 4, this->position.y + 25});
+        if(!this->powerSaving)
+            this->canvas->printFloatVariable(this->pdop, {this->position.x + 35, this->position.y + 25});
+        else
+            this->canvas->printText("N/A", {this->position.x + 35, this->position.y + 25});
+    }
+
+    void DOPScreenView::setPowerSaving(bool on)
+    {
+        this->powerSaving = on;
+    }
+
+    void DOPScreenView::setDOP(float _hdop, float _vdop, float _pdop)
+    {
+        hdop = _hdop;
+        vdop = _vdop;
+        pdop = _pdop;
+    }
+
+    void DOPScreenView::clear(DOPScreenView::ViewSection section)
+    {
+        switch(section)
+        {
+            case Header:
+                this->canvas->erase(this->position, {8, 128});
+                break;
+            case HDOP:
+                this->canvas->erase({this->position.x, this->position.y +  9}, {8, 128});
+                break;
+            case VDOP:
+                this->canvas->erase({this->position.x, this->position.y + 17}, {8, 128});
+                break;
+            case PDOP:
+                this->canvas->erase({this->position.x, this->position.y + 25}, {8, 128});
+                break;
+        }
+    }
+
     SIVView::SIVView(Canvas* can, Vector2D pos)
         : Component(can, pos, Dimensions2D{SIVVIEW_HEIGHT, SIVVIEW_WIDTH}), siv(0), powerSaving(true) {}
 
