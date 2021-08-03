@@ -56,6 +56,8 @@ constexpr char btID[]  = "XH-12345678";
 
 #define ONOFF_LEDPIN A3
 #define BATTERY_LEDPIN A4
+#define RTK_LEDPIN A3
+#define DGPS_LEDPIN A4
 #define SPARE_RED 2
 #define SPARE_BLUE 3
 
@@ -75,6 +77,9 @@ Buzzer buzzer(BUZZERPIN);
 
 LED onOffLED(ONOFF_LEDPIN);
 LED batteryLED(BATTERY_LEDPIN);
+LED rtkLED(RTK_LEDPIN);
+LED dgpsLED(DGPS_LEDPIN);
+
 
 Canvas* display;
 LogoView* logoView;
@@ -299,6 +304,27 @@ void start()
                     Serial.println("Unknown");
             }
             solutionTypeView->draw();
+
+            if(data.solType < GPSConfig::NoFix)
+            {
+                rtkLED.set(0);
+                dgpsLED.set(0);
+            } 
+            else if(data.solType < GPSConfig::FloatRTK)
+            {
+                rtkLED.set(0);
+                dgpsLED.set(255);
+            }
+            else if(data.solType < GPSConfig::FixedRTK)
+            {
+                rtkLED.set(255, 500);
+                dgpsLED.set(0);
+            }
+            else
+            {
+                rtkLED.set(255);
+                dgpsLED.set(0);
+            }
 
             auto latlon = GPSConfig::getLatLonHRPretty();
             coordinatesView->setCoordinates(latlon.first, latlon.second, data.alt);
