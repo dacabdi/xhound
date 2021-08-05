@@ -56,10 +56,8 @@ constexpr char btID[]  = "XH-12345678";
 
 #define ONOFF_LEDPIN A3
 #define BATTERY_LEDPIN A4
-#define RTK_LEDPIN A3
-#define DGPS_LEDPIN A4
-#define SPARE_RED 2
-#define SPARE_BLUE 3
+#define RTK_LEDPIN 3
+#define DGPS_LEDPIN 2
 
 #define BUZZERPIN A0
 #define BLUETOOTHPIN 6
@@ -324,12 +322,12 @@ void start()
             if(data.solType < GPSConfig::NoFix)
             {
                 rtkLED.set(0);
-                dgpsLED.set(0);
+                dgpsLED.set(255);
             } 
             else if(data.solType < GPSConfig::FloatRTK)
             {
                 rtkLED.set(0);
-                dgpsLED.set(255);
+                dgpsLED.set(255, 500);
             }
             else if(data.solType < GPSConfig::FixedRTK)
             {
