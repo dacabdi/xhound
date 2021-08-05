@@ -67,8 +67,6 @@ constexpr char btID[]  = "XH-12345678";
 
 using namespace GNSS_RTK_ROVER;
 
-FlashStorage(tolete, int);
-
 PeripheralPowerController peripheralPower;
 
 Buzzer buzzer(BUZZERPIN);
@@ -451,10 +449,6 @@ void setup()
     analogReadResolution(10);
     analogReference(AR_INTERNAL2V23);
     delay(1000);
-
-    auto curr_tolete = tolete.read();
-    Serial.print("Tolete is: "); Serial.println(curr_tolete);
-    tolete.write(8);
 
     // I2C and UART
     Wire.begin();
