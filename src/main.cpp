@@ -219,7 +219,7 @@ void start()
         },
         [&](){ // onBatteryNotFull
             if(CPUPowerController::isCharging())
-                batteryLED.set(255, 0);
+                batteryLED.set(255, 500);
         },
         [&](){ //onBatteryDead
             CPUPowerController::turnOff();
@@ -319,21 +319,25 @@ void start()
 
             if(data.solType < GPSConfig::NoFix)
             {
+                Serial.println("RightLED: GNSS OFF");
                 rtkLED.set(0);
                 dgpsLED.set(255);
-            } 
+            }
             else if(data.solType < GPSConfig::FloatRTK)
             {
+                Serial.println("RightLED: NO RTK");
                 rtkLED.set(0);
                 dgpsLED.set(255, 500);
             }
             else if(data.solType < GPSConfig::FixedRTK)
             {
+                Serial.println("RightLED: FLOAT RTK");
                 rtkLED.set(255, 500);
                 dgpsLED.set(0);
             }
             else
             {
+                Serial.println("RightLED: FIXED RTK");
                 rtkLED.set(255);
                 dgpsLED.set(0);
             }
@@ -420,6 +424,9 @@ void stop()
         delay(200);
     }
     onOffLED.set(0);
+
+    dgpsLED.set(0);
+    rtkLED.set(0);
 
     delete display;
     delete logoView;

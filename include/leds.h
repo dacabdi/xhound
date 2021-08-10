@@ -3,7 +3,7 @@
 
 #include "Arduino.h"
 
-#define MAX_LED_COUNT 4
+#define MAX_LED_COUNT 6
 
 namespace GNSS_RTK_ROVER
 {

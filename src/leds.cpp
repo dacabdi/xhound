@@ -21,6 +21,7 @@ namespace GNSS_RTK_ROVER
     {
         for(int i = 0; i < instancesCount; i++)
         {
+            Serial.print("refreshing LED: "); Serial.println(i);
             instances[i]->refresh();
         }
     }
