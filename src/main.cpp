@@ -143,8 +143,8 @@ void createScreens()
 
     pinMode(RIGHTKEYPIN, INPUT_PULLUP);
     pinMode(LEFTKEYPIN, INPUT_PULLUP);
-    attachInterrupt(RIGHTKEYPIN, ScreenManager::nextScreen, FALLING);
-    attachInterrupt(LEFTKEYPIN, ScreenManager::previousScreen, FALLING);
+    attachInterrupt(RIGHTKEYPIN, ScreenManager::queueNextScreen, FALLING);
+    attachInterrupt(LEFTKEYPIN, ScreenManager::queuePreviousScreen, FALLING);
 }
 
 void deleteScreens()
@@ -232,38 +232,20 @@ void start()
             btStatusView->setStatus(true);
             btStatusView->draw();
             buzzer.buzzBTConnected();
+
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
-            coordinatesView->setPowerSaving(false);
-            coordinatesView->draw();
-            dopScreenView->setPowerSaving(false);
-            dopScreenView->draw();
-            sivView->setPowerSaving(false);
-            sivView->draw();
-            dopView->setPowerSaving(false);
-            dopView->draw();
-            baseInfoView->setPowerSaving(false);
-            baseInfoView->draw();
         },
         [&](){ // onDisconnected
             Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
-            coordinatesView->setPowerSaving(true);
-            coordinatesView->draw();
-            dopScreenView->setPowerSaving(true);
-            dopScreenView->draw();
-            sivView->setPowerSaving(true);
-            sivView->draw();
-            dopView->setPowerSaving(true);
-            dopView->draw();
-            baseInfoView->setPowerSaving(true);
-            baseInfoView->draw();
+            buzzer.buzzBTDisconnected();
 
+            GPSConfig::stop();
             GPSConfig::configureDefault();
             GPSConfig::Sleep();
 
-            buzzer.buzzBTDisconnected();
         });
     Serial.println("Finished setting up bluetooth monitor");
 
@@ -277,7 +259,7 @@ void start()
             Serial.println("GNSS not connected. Trying...");
         },
         [&](GPSConfig::GPSData& data){ // update
-            Serial.print("Solution type: ");
+        Serial.print("Solution type: ");
             switch(data.solType)
             {
                 case GPSConfig::GnssOff:
@@ -319,28 +301,31 @@ void start()
 
             if(data.solType < GPSConfig::NoFix)
             {
-                Serial.println("RightLED: GNSS OFF");
                 rtkLED.set(0);
                 dgpsLED.set(255);
             }
             else if(data.solType < GPSConfig::FloatRTK)
             {
-                Serial.println("RightLED: NO RTK");
                 rtkLED.set(0);
                 dgpsLED.set(255, 500);
             }
             else if(data.solType < GPSConfig::FixedRTK)
             {
-                Serial.println("RightLED: FLOAT RTK");
                 rtkLED.set(255, 500);
                 dgpsLED.set(0);
             }
             else
             {
-                Serial.println("RightLED: FIXED RTK");
                 rtkLED.set(255);
                 dgpsLED.set(0);
             }
+
+            auto sel = data.solType == GPSConfig::GnssOff ? true : false;
+            coordinatesView->setPowerSaving(sel);
+            dopScreenView->setPowerSaving(sel);
+            sivView->setPowerSaving(sel);
+            dopView->setPowerSaving(sel);
+            baseInfoView->setPowerSaving(sel);
 
             auto latlon = GPSConfig::getLatLonHRPretty();
             coordinatesView->setCoordinates(latlon.first, latlon.second, data.alt);
@@ -362,36 +347,6 @@ void start()
     logoView->draw();
     delay(5000);
     logoView->clear();
-
-    // Menu list test
-    // auto options = new MenuOptionPtr[5] {
-    //     new MenuOption(display, {0, 0}, "testing 111"),
-    //     new MenuOption(display, {0, 0}, "testing 222"),
-    //     new MenuOption(display, {0, 0}, "testing 333"),
-    //     new MenuOption(display, {0, 0}, "testing 444"),
-    //     new MenuOption(display, {0, 0}, "testing 555"),
-    // };
-
-    // auto menuList = new MenuList(display, {0, 0}, options, 5);
-    // menuList->draw();
-    // delay(5000);
-    // menuList->select(1);
-    // menuList->draw();
-    // delay(5000);
-    // menuList->select(2);
-    // menuList->draw();
-    // delay(5000);
-    // menuList->select(3);
-    // menuList->draw();
-    // delay(5000);
-    // menuList->select(4);
-    // menuList->draw();
-    // delay(5000);
-    // menuList->select(0);
-    // menuList->draw();
-    // delay(5000);
-    // delay(10000);
-    // delete menuList;
 
     createScreens();
 }
@@ -455,12 +410,10 @@ void setup()
 {
     analogReadResolution(10);
     analogReference(AR_INTERNAL2V23);
-    delay(1000);
 
     // I2C and UART
     Wire.begin();
 	Serial.begin(MONITOR_SERIAL_BAUD);
-	delay(1000);
 	Serial.println("UARTS & I2C Initialized...");
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
     Serial.println("Setting up power control");
@@ -491,19 +444,53 @@ void setup()
             }
         });
 
-    schedule.AddEvent(500, CPUPowerController::checkOnOffStatus);
-    schedule.AddEvent(2000, CPUPowerController::checkCharging);
     schedule.AddEvent(100, LED::refreshInstances);
+    schedule.AddEvent(200, ScreenManager::refresh);
+    schedule.AddEvent(500, CPUPowerController::checkOnOffStatus);
+    schedule.AddEvent(750, CPUPowerController::checkCharging);
+    schedule.AddEvent(1000, GPSConfig::checkUbloxCallbacks);
+    schedule.AddEvent(1200, BluetoothMonitor::checkStatus);
+    schedule.AddEvent(1500, GPSConfig::checkStatus);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
-    schedule.AddEvent(1000, BluetoothMonitor::checkStatus);
-    schedule.AddEvent(2500, GPSConfig::checkStatus);
-    schedule.AddEvent(2000, ScreenManager::refresh);
 
     Serial.println("Finished Setup");
-	delay(1000);
 }
 
 void loop()
 {
+    GPSConfig::checkUblox();
     schedule.Update();
+
+    uint8_t select = 0;
+    if(Serial.available())
+    {
+        select = Serial.read() - '0';
+
+        Serial.print("Input is: "); Serial.println(select);
+
+        if(select < 1)
+        {
+            Serial.println("LeftLED: GNSS OFF");
+            rtkLED.set(0);
+            dgpsLED.set(255);
+        }
+        else if(select < 2)
+        {
+            Serial.println("LeftLED: NO RTK");
+            rtkLED.set(0);
+            dgpsLED.set(255, 500);
+        }
+        else if (select < 3)
+        {
+            Serial.println("LeftLED: FLOAT RTK");
+            rtkLED.set(255, 500);
+            dgpsLED.set(0);
+        }
+        else
+        {
+            Serial.println("LeftLED: FIXED RTK");
+            rtkLED.set(255);
+            dgpsLED.set(0);
+        }
+    }
 }

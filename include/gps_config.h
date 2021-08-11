@@ -3,6 +3,8 @@
 
 #include "Arduino.h"
 
+#define GNSS_CALLS_MAXWAIT 250
+
 namespace GNSS_RTK_ROVER
 {
     class GPSConfig
@@ -49,6 +51,8 @@ namespace GNSS_RTK_ROVER
             std::function<void(GPSData&)> onUpdate);
         static void stop();
         static void checkStatus();
+        static void checkUblox();
+        static void checkUbloxCallbacks();
         static void configureDefault();
         static void WakeUp();
         static void Sleep();
@@ -69,6 +73,10 @@ namespace GNSS_RTK_ROVER
         static void configureAsBase();
         static void configureDisableBase();
 
+        static void setAutoCalls();
+        static void resolvePVT(UBX_NAV_PVT_data_t packet);
+        static void resolveDOP(UBX_NAV_DOP_data_t packet);
+        static void resolveRELPOSNED(UBX_NAV_RELPOSNED_data_t packet);
         static void resolveSolutionType();
         static void resolveCoordinates();
         static void resolveSIV();

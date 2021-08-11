@@ -346,8 +346,6 @@ namespace GNSS_RTK_ROVER
         if(!enabled)
             return;
 
-        Serial.print("DOP is: ");
-        Serial.println(this->dop);
         this->clear();
         this->canvas->printText("DOP:", {this->position.x, this->position.y});
         if(!this->powerSaving)

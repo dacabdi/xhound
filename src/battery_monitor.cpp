@@ -43,7 +43,9 @@ namespace GNSS_RTK_ROVER
             return;
 
         if(!readAndCalculateVoltage() && voltage != 0)
+        {
             return;
+        }
 
         if(voltage < BATTERY_DEAD_VOLT)
             onBatteryDead();
@@ -53,12 +55,12 @@ namespace GNSS_RTK_ROVER
             forceUpdate = false;
             onVoltageChanged(voltage, isCharging, batteryFull);
         }
-        if(voltage >= 4.15 && !batteryFull)
+        if(voltage >= 4.12 && !batteryFull)
         {
             batteryFull = true;
             onBatteryFull();
         }
-        if(voltage < 4.15 && batteryFull && (!isCharging || voltage < 4.00))
+        if(voltage < 4.12 && batteryFull && (!isCharging || voltage < 4.00))
         {
             batteryFull = false;
             onBatteryNotFull();

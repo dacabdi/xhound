@@ -20,7 +20,7 @@ namespace GNSS_RTK_ROVER
     std::function<void(GPSConfig::GPSData&)> GPSConfig::onUpdate;
 
     void GPSConfig::start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> _onConnected, std::function<void()> _onTryingConnection,
-            std::function<void(GPSConfig::GPSData&)> _onUpdate)
+            std::function<void(GPSData&)> _onUpdate)
     {
         initialized = true;
         serialBaudUart1 = _serialBaudUart1;
@@ -41,24 +41,24 @@ namespace GNSS_RTK_ROVER
         gnss.factoryDefault();
         configurePorts();
         configureForNMEA();
-        gnss.setNavigationFrequency(1);
+        gnss.setNavigationFrequency(2);
         configureAntenna();
         gnss.saveConfiguration();
-        delay(1000);
         Serial.print("GNSS Protocol version: "); Serial.print(gnss.getProtocolVersionHigh()); Serial.print("."); Serial.println(gnss.getProtocolVersionLow());
         Serial.println("GNSS just got reconfigured to default settings");
     }
 
     void GPSConfig::Sleep()
     {
-        gnss.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX);
+        gnss.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX|VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0|VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1|VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS);
         Serial.println("GNSS is SLEEPING ...");
+        data.solType = GnssOff;
         gnssOff = true;
     }
 
     void GPSConfig::WakeUp()
     {
-        while(gnss.getDateValid() == 0)
+        while(!gnss.getDateValid())
         {
             Serial.println("GNSS is waking up ...");
             delay(10);
@@ -79,6 +79,7 @@ namespace GNSS_RTK_ROVER
         Serial.print(" UTC");
         Serial.println();
         gnssOff = false;
+        setAutoCalls();
     }
 
     void GPSConfig::configurePorts()
@@ -101,18 +102,103 @@ namespace GNSS_RTK_ROVER
         gnss.setPortOutput(COM_PORT_SPI, NULL);
     }
 
+    void GPSConfig::setAutoCalls()
+    {
+        gnss.setAutoPVTcallback(&resolvePVT);
+        gnss.setAutoDOPcallback(&resolveDOP);
+        gnss.setAutoRELPOSNEDcallback(&resolveRELPOSNED);   
+    }
+
     void GPSConfig::checkStatus()
     {
+        auto start = millis();
         if(!initialized) // Skip if not setup yet
             return;
 
-        resolveSolutionType();
-        resolveCoordinates();
-        resolveSIV();
-        resolveDOP();
-        resolveReferenceStation();
-
         onUpdate(data);
+    }
+
+    void GPSConfig::checkUblox()
+    {
+        if(initialized && !gnssOff)
+            gnss.checkUblox();
+    }
+
+    void GPSConfig::checkUbloxCallbacks()
+    {
+        if(initialized && !gnssOff)
+            gnss.checkCallbacks();
+    }
+
+    void GPSConfig::resolvePVT(UBX_NAV_PVT_data_t packet)
+    {
+        Serial.println("GPSConfig :: Got PVT");
+        
+        // Coordinates
+        data.lat = packet.lat;
+        data.lon = packet.lon;
+        data.alt = double(packet.hMSL) * 0.00328084;
+        
+        // SIV
+        data.siv = packet.numSV;
+
+        // Solution Type 
+        if(gnssOff)
+        {
+            data.solType = GnssOff;
+            return;
+        }
+        if(packet.flags.bits.diffSoln)
+        {
+            switch(packet.flags.bits.carrSoln)
+            {
+                case 0:
+                    data.solType = DGPS;
+                    return;
+                case 1:
+                    data.solType = FloatRTK;
+                    return;
+                case 2:
+                    data.solType =  FixedRTK;
+                    return;
+            }
+        }
+        switch(packet.fixType)
+        {
+            case 1:
+                data.solType = DeadReckoning;
+                return;
+            case 2:
+                data.solType = TwoDFix;
+                return;
+            case 3:
+                data.solType = ThreeDFix;
+                return;
+            case 4:
+                data.solType = GNSS;
+                return;
+            case 5:
+                data.solType = TimeFix;
+                return;
+        }
+        data.solType = NoFix;
+    }
+
+    void GPSConfig::resolveDOP(UBX_NAV_DOP_data_t packet)
+    {
+        Serial.println("GPSConfig :: Got DOP");
+
+        data.hdop = ((float)packet.hDOP/100);
+        data.vdop = ((float)packet.vDOP/100);
+        data.pdop = ((float)packet.pDOP/100);
+    }
+
+    void GPSConfig::resolveRELPOSNED(UBX_NAV_RELPOSNED_data_t packet)
+    {
+        Serial.println("GPSConfig :: Got RELPOSNED");
+
+        data.refID = packet.refStationId;
+        data.refDistance = packet.relPosLength;
     }
 
     GPSConfig::SolutionType GPSConfig::getSolutionType()
@@ -123,13 +209,6 @@ namespace GNSS_RTK_ROVER
     GPSConfig::Mode GPSConfig::getMode()
     {
         return data.mode;
-    }
-
-    void GPSConfig::resolveCoordinates()
-    {
-        data.lat   = gnss.getHighResLatitude();
-        data.lon   = gnss.getHighResLongitude();
-        data.alt   = double(gnss.getAltitudeMSL()) * 0.00328084;
     }
 
     void GPSConfig::connect()
@@ -269,10 +348,9 @@ namespace GNSS_RTK_ROVER
             data.solType = GnssOff;
             return;
         }
-        if(gnss.getDiffSoln())
+        if(gnss.packetUBXNAVPVT->data.flags.bits.diffSoln)
         {
-            auto carrierSolutionType = gnss.getCarrierSolutionType();
-            switch(carrierSolutionType)
+            switch(gnss.packetUBXNAVPVT->data.flags.bits.carrSoln)
             {
                 case 0:
                     data.solType = DGPS;
@@ -285,8 +363,7 @@ namespace GNSS_RTK_ROVER
                     return;
             }
         }
-        auto fixType = gnss.getFixType();
-        switch(fixType)
+        switch(gnss.packetUBXNAVPVT->data.fixType)
         {
             case 1:
                 data.solType = DeadReckoning;
@@ -307,16 +384,23 @@ namespace GNSS_RTK_ROVER
         data.solType = NoFix;
     }
 
+    void GPSConfig::resolveCoordinates() 
+    {
+        data.lat   = gnss.packetUBXNAVPVT->data.lat;
+        data.lon   = gnss.packetUBXNAVPVT->data.lon;
+        data.alt   = double(gnss.packetUBXNAVPVT->data.hMSL) * 0.00328084;
+    }
+
     void GPSConfig::resolveSIV()
     {
-        data.siv = gnss.getSIV();
+        data.siv = gnss.packetUBXNAVPVT->data.numSV;
     }
 
     void GPSConfig::resolveDOP()
     {
-        data.hdop = ((float)gnss.getHorizontalDOP()/100);
-        data.vdop = ((float)gnss.getVerticalDOP()/100);
-        data.pdop = ((float)gnss.getPDOP()/100);
+        data.hdop = ((float)gnss.packetUBXNAVDOP->data.hDOP/100);
+        data.vdop = ((float)gnss.packetUBXNAVDOP->data.vDOP/100);
+        data.pdop = ((float)gnss.packetUBXNAVPVT->data.pDOP/100);
     }
 
     // lat, lon
@@ -343,15 +427,7 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::resolveReferenceStation()
     {
-        if(gnss.getRELPOSNED())
-        {
-            data.refID = gnss.packetUBXNAVRELPOSNED->data.refStationId;
-            data.refDistance = gnss.packetUBXNAVRELPOSNED->data.relPosLength;
-        }
-        else
-        {
-            data.refID = 0;
-            data.refDistance = 0;
-        }
+        data.refID = gnss.packetUBXNAVRELPOSNED->data.refStationId;
+        data.refDistance = gnss.packetUBXNAVRELPOSNED->data.relPosLength;
     }
 }

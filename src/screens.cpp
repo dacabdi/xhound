@@ -11,6 +11,8 @@ namespace GNSS_RTK_ROVER
     int8_t ScreenManager::currentScreen = 0;
     int8_t ScreenManager::prevScreen = 0;
     int ScreenManager::lastMoved = 0;
+    bool ScreenManager::nextQueued = false;
+    bool ScreenManager::previousQueued = false;
 
     void ScreenManager::setup(std::vector<Component*> _screens)
     {
@@ -30,9 +32,20 @@ namespace GNSS_RTK_ROVER
         goToScreen(currentScreen);
     }
 
-    void ScreenManager::nextScreen()
+    void ScreenManager::queueNextScreen()
     {
         lastMoved = millis();
+        nextQueued = true;
+    }
+    
+    void ScreenManager::queuePreviousScreen()
+    {
+        lastMoved = millis();
+        previousQueued = true;
+    }
+
+    void ScreenManager::nextScreen()
+    {
         prevScreen = currentScreen;
         auto next = (currentScreen + 1) % screens.size();
         currentScreen = next;
@@ -41,7 +54,6 @@ namespace GNSS_RTK_ROVER
 
     void ScreenManager::previousScreen()
     {
-        lastMoved = millis();
         prevScreen = currentScreen;
         currentScreen = currentScreen == 0 ? screens.size() - 1 : currentScreen - 1;
         goToScreen(currentScreen);
@@ -56,6 +68,14 @@ namespace GNSS_RTK_ROVER
         {
             mainScreen();
         }
+
+        if(nextQueued && !previousQueued)
+            nextScreen();
+        if(!nextQueued && previousQueued)
+            previousScreen();
+
+        nextQueued = false;
+        previousQueued = false;
     }
 
     void ScreenManager::goToScreen(uint8_t screenNumber)

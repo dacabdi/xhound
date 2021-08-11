@@ -21,13 +21,15 @@ namespace GNSS_RTK_ROVER
     {
         for(int i = 0; i < instancesCount; i++)
         {
-            Serial.print("refreshing LED: "); Serial.println(i);
             instances[i]->refresh();
         }
     }
 
     void LED::set(uint8_t _intOn, uint16_t _blinkPeriod, uint8_t _intOff)
     {
+        if(_intOn == this->intOn && _blinkPeriod == this->blinkPeriod && _intOff == this->intOff)
+            return;
+
         this->on = true;
         this->intOn = _intOn;
         this->intOff = _intOff;
