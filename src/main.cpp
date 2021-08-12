@@ -37,8 +37,8 @@
 
 // Device Info
 constexpr char model[] = "XHound V1.27";
-constexpr char sn[]    = "XH-00000001";
-constexpr char btID[]  = "XHound";
+constexpr char sn[]    = "XH-000000-00";
+constexpr char btID[]  = "XH-0000";
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
@@ -459,37 +459,4 @@ void loop()
 {
     GPSConfig::checkUblox();
     schedule.Update();
-
-    uint8_t select = 0;
-    if(Serial.available())
-    {
-        select = Serial.read() - '0';
-
-        Serial.print("Input is: "); Serial.println(select);
-
-        if(select < 1)
-        {
-            Serial.println("LeftLED: GNSS OFF");
-            rtkLED.set(0);
-            dgpsLED.set(255);
-        }
-        else if(select < 2)
-        {
-            Serial.println("LeftLED: NO RTK");
-            rtkLED.set(0);
-            dgpsLED.set(255, 500);
-        }
-        else if (select < 3)
-        {
-            Serial.println("LeftLED: FLOAT RTK");
-            rtkLED.set(255, 500);
-            dgpsLED.set(0);
-        }
-        else
-        {
-            Serial.println("LeftLED: FIXED RTK");
-            rtkLED.set(255);
-            dgpsLED.set(0);
-        }
-    }
 }
