@@ -36,9 +36,9 @@
 #include "views_menu.h"
 
 // Device Info
-constexpr char model[] = "xHound v2.1";
+constexpr char model[] = "XHound V1.27";
 constexpr char sn[]    = "XH-00000001";
-constexpr char btID[]  = "XH-12345678";
+constexpr char btID[]  = "XHound";
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
@@ -242,7 +242,6 @@ void start()
             btStatusView->draw();
             buzzer.buzzBTDisconnected();
 
-            GPSConfig::stop();
             GPSConfig::configureDefault();
             GPSConfig::Sleep();
 

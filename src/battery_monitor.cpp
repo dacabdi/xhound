@@ -133,7 +133,7 @@ namespace GNSS_RTK_ROVER
     {
         if(isCharging)
         {
-            if(voltage >= 4.13)
+            if(voltage >= 4.10)
                 return 100;
             else if(voltage >= 3.90)
                 return 66;
