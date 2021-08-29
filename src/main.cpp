@@ -86,7 +86,7 @@ BatteryView* batteryView;
 BTStatusView* btStatusView;
 SolutionTypeView* solutionTypeView;
 SIVView* sivView;
-DOPView* dopView;
+VoltageView* voltageView;
 
 CompositeComponent* coordinatesScreen;
 CoordinatesView* coordinatesView;
@@ -110,14 +110,14 @@ void createScreens()
     btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
     sivView = new SIVView(display, {0, 22});
-    dopView = new DOPView(display, {65, 22});
+    voltageView = new VoltageView(display, {65, 22});
     mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     mainScreen->embed(mainDivisionLineView);
     mainScreen->embed(batteryView);
     mainScreen->embed(btStatusView);
     mainScreen->embed(solutionTypeView);
     mainScreen->embed(sivView);
-    mainScreen->embed(dopView);
+    mainScreen->embed(voltageView);
 
     // Coordinates screen
     coordinatesView = new CoordinatesView(display, {0, 0});
@@ -158,7 +158,7 @@ void deleteScreens()
     delete btStatusView;
     delete solutionTypeView;
     delete sivView;
-    delete dopView;
+    delete voltageView;
 
     // Coordinates screen
     delete coordinatesScreen;
@@ -203,6 +203,8 @@ void start()
             auto percentage = batteryFull ? 100 : BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
             batteryView->setPercentage(percentage);
             batteryView->draw();
+            voltageView->setVoltage(voltage);
+            voltageView->draw();
 
             if(percentage == 0)
             {
@@ -323,7 +325,6 @@ void start()
             coordinatesView->setPowerSaving(sel);
             dopScreenView->setPowerSaving(sel);
             sivView->setPowerSaving(sel);
-            dopView->setPowerSaving(sel);
             baseInfoView->setPowerSaving(sel);
 
             auto latlon = GPSConfig::getLatLonHRPretty();
@@ -335,9 +336,6 @@ void start()
 
             sivView->setSIV(data.siv);
             sivView->draw();
-
-            dopView->setDOP(data.pdop);
-            dopView->draw();
 
             baseInfoView->setInfo(data.refID, data.refDistance);
             baseInfoView->draw();
