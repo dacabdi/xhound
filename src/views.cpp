@@ -163,8 +163,8 @@ namespace GNSS_RTK_ROVER
             return;
 
         this->clear();
-        this->canvas->printText("VBat = ", {this->position.x, this->position.y});
-        this->canvas->printFloatVariable(this->voltage, {this->position.x + 42, this->position.y});
+        this->canvas->printText("BV = ", {this->position.x, this->position.y});
+        this->canvas->printFloatVariable(this->voltage, {this->position.x + 30, this->position.y});
     }
 
     void VoltageView::setVoltage(float_t vol)

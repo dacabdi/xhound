@@ -110,7 +110,7 @@ void createScreens()
     btStatusView = new BTStatusView(display, {103, 0});
     solutionTypeView = new SolutionTypeView(display, {0, 0});
     sivView = new SIVView(display, {0, 22});
-    voltageView = new VoltageView(display, {65, 22});
+    voltageView = new VoltageView(display, {70, 22});
     mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     mainScreen->embed(mainDivisionLineView);
     mainScreen->embed(batteryView);
