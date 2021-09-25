@@ -254,7 +254,7 @@ namespace GNSS_RTK_ROVER
         void setInfo(long id, long distance);
 
         private:
-        enum ViewSection 
+        enum ViewSection
         {
             Header,
             BaseID,
@@ -276,7 +276,7 @@ namespace GNSS_RTK_ROVER
         void draw() override;
 
         private:
-        enum ViewSection 
+        enum ViewSection
         {
             Header,
             Model,

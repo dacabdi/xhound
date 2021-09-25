@@ -415,7 +415,7 @@ namespace GNSS_RTK_ROVER
         int latMinutes = latMinutesTemp * std::pow(10, -7);
         float latSeconds = float(latMinutesTemp - (latMinutes * std::pow(10, 7))) * pow(10, -7) * 60;
 
-        String prettyLat = String(latDegrees) + " " + String(latMinutes) + "\'" + String(latSeconds) + "\""; 
+        String prettyLat = String(latDegrees) + " " + String(latMinutes) + "\'" + String(latSeconds) + "\"";
 
         int lonDegrees = float(data.lon) * std::pow(10, -7);
         int lonMinutesTemp = float(data.lon - (lonDegrees * std::pow(10, 7))) * 60;
@@ -423,7 +423,7 @@ namespace GNSS_RTK_ROVER
         int lonMinutes = lonMinutesTemp * std::pow(10, -7);
         float lonSeconds = float(lonMinutesTemp - (lonMinutes * std::pow(10, 7))) * pow(10, -7) * 60;
 
-        String prettyLon = String(lonDegrees) + " " + String(lonMinutes) + "\'" + String(lonSeconds) + "\""; 
+        String prettyLon = String(lonDegrees) + " " + String(lonMinutes) + "\'" + String(lonSeconds) + "\"";
 
         return {prettyLat, prettyLon};
     }

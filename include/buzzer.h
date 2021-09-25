@@ -5,7 +5,7 @@
 
 namespace GNSS_RTK_ROVER
 {
-    class Buzzer 
+    class Buzzer
     {
         public:
         Buzzer(int buzzPin) : m_buzzPin(buzzPin) { pinMode(m_buzzPin, OUTPUT); }
@@ -25,7 +25,7 @@ namespace GNSS_RTK_ROVER
         private:
         int m_buzzPin;
     };
-    
+
     inline void Buzzer::buzzPowerOn()
     {
         tone(m_buzzPin, NOTE_A4, 150); delay(200); tone(m_buzzPin, NOTE_B4, 200); delay(250); noTone(m_buzzPin);
@@ -65,9 +65,9 @@ namespace GNSS_RTK_ROVER
     {
         for(int i = 0; i < 2; i++)
         {
-            digitalWrite(m_buzzPin, HIGH); 
-            delay(20); 
-            digitalWrite(m_buzzPin, LOW); 
+            digitalWrite(m_buzzPin, HIGH);
+            delay(20);
+            digitalWrite(m_buzzPin, LOW);
             delay(30);
         }
     }
@@ -76,9 +76,9 @@ namespace GNSS_RTK_ROVER
     {
         for(int i = 0; i < 4; i++)
         {
-            digitalWrite(m_buzzPin, HIGH); 
-            delay(20); 
-            digitalWrite(m_buzzPin, LOW); 
+            digitalWrite(m_buzzPin, HIGH);
+            delay(20);
+            digitalWrite(m_buzzPin, LOW);
             delay(30);
         }
     }

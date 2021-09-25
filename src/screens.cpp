@@ -37,7 +37,7 @@ namespace GNSS_RTK_ROVER
         lastMoved = millis();
         nextQueued = true;
     }
-    
+
     void ScreenManager::queuePreviousScreen()
     {
         lastMoved = millis();

@@ -1,9 +1,9 @@
 #ifndef _EAVESDROPPER_H_
 #define _EAVESDROPPER_H_
-  
+
 #include "Arduino.h"
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
     class Eavesdropper
     {
@@ -24,7 +24,7 @@ namespace GNSS_RTK_ROVER
         Stream& m_ostream;
     };
 
-    class UBXEavesdropper : public SimpleEavesdropper 
+    class UBXEavesdropper : public SimpleEavesdropper
     {
         public:
         UBXEavesdropper(Stream& istream, Stream& ostream) : SimpleEavesdropper(istream, ostream) { resetParserAndTmpCK(); }
@@ -42,7 +42,7 @@ namespace GNSS_RTK_ROVER
 
         void readPreamble();
         void readHeader();
-        void readPayload();        
+        void readPayload();
         bool readChecksum();
 
         uint16_t headerIndex();
@@ -66,14 +66,14 @@ namespace GNSS_RTK_ROVER
 
     };
 
-    inline void UBXEavesdropper::resetParserAndTmpCK() 
+    inline void UBXEavesdropper::resetParserAndTmpCK()
     {
         m_parserState = 0;
         m_tempChecksum[0] = 0;
         m_tempChecksum[1] = 0;
     }
 
-    inline void UBXEavesdropper::addToTempChecksum() 
+    inline void UBXEavesdropper::addToTempChecksum()
     {
         m_tempChecksum[0] += m_byte;
         m_tempChecksum[1] += m_tempChecksum[0];
@@ -112,7 +112,7 @@ namespace GNSS_RTK_ROVER
             case 0:
                 m_checksum[0] = m_tempChecksum[0];
                 m_checksum[1] = m_tempChecksum[1];
-                if (m_byte != m_checksum[0]) 
+                if (m_byte != m_checksum[0])
                 {
                     resetParserAndTmpCK();
                 }
@@ -120,7 +120,7 @@ namespace GNSS_RTK_ROVER
                 break;
             case 1:
                 resetParserAndTmpCK();
-                if (m_byte == m_checksum[1]) 
+                if (m_byte == m_checksum[1])
                 {
                     return true;
                 }
@@ -132,17 +132,17 @@ namespace GNSS_RTK_ROVER
         return false;
     }
 
-    inline uint16_t UBXEavesdropper::headerIndex() 
+    inline uint16_t UBXEavesdropper::headerIndex()
     {
         return m_parserState - sizeof(m_preamble);
     }
 
-    inline uint16_t UBXEavesdropper::payloadIndex() 
+    inline uint16_t UBXEavesdropper::payloadIndex()
     {
         return m_parserState - (sizeof(m_preamble) + sizeof(Header));
     }
 
-    inline uint16_t UBXEavesdropper::checksumIndex() 
+    inline uint16_t UBXEavesdropper::checksumIndex()
     {
         return m_parserState - (sizeof(m_preamble) + sizeof(Header) + m_header.msg_length);
     }
