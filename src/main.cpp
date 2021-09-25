@@ -1,6 +1,8 @@
 #undef min
 #undef max
 
+#define DBGON
+
 #include <vector>
 #include <functional>
 #include <map>
@@ -11,6 +13,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Timer.h>
+#include <WDTZero.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "SparkFun_u-blox_GNSS_Arduino_Library.h"
@@ -38,7 +41,7 @@
 // Device Info
 constexpr char model[] = "XHound V1.27";
 constexpr char sn[]    = "XH-000000-00";
-constexpr char btID[]  = "XH-0000";
+constexpr char btID[]  = "XH-E803";
 
 #define MONITOR_SERIAL_BAUD 115200
 #define GPS_UART1_BAUD 115200
@@ -62,12 +65,19 @@ constexpr char btID[]  = "XH-0000";
 #define BUZZERPIN A0
 #define BLUETOOTHPIN 6
 
+#define GNSSINTPIN A5
+#define GNSSRSTPIN A6
+#define GNSSPPSPIN 8
+#define GNSSRTKPIN 9
+#define GNSSFENCEPIN 10
+
 #define DISPLAYOFFSETX 4
 #define DISPLAYOFFSETY 0
 
 using namespace GNSS_RTK_ROVER;
 
 PeripheralPowerController peripheralPower;
+WDTZero watchd;
 
 Buzzer buzzer(BUZZERPIN);
 
@@ -101,6 +111,30 @@ CompositeComponent* deviceInfoScreen;
 DeviceInfoView* deviceInfoView;
 
 Schedule schedule;
+
+// #ifdef __arm__
+// // should use uinstd.h to define sbrk but Due causes a conflict
+// extern "C" char* sbrk(int incr);
+// #else  // __ARM__
+// extern char *__brkval;
+// #endif  // __arm__
+
+// int freeMemory() {
+//   char top;
+// #ifdef __arm__
+//   return &top - reinterpret_cast<char*>(sbrk(0));
+// #elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+//   return &top - __brkval;
+// #else  // __arm__
+//   return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+// #endif  // __arm__
+// }
+
+// void reportMemUsage()
+// {
+//     const auto msg = std::string("TRACE: Free memory left ") + std::to_string(freeMemory());
+//     Serial.println(msg.c_str());
+// }
 
 void createScreens()
 {
@@ -136,7 +170,7 @@ void createScreens()
 
     // DeviceInfo screen
     deviceInfoView = new DeviceInfoView(display, {0, 0}, String(model), String(sn), String(btID));
-    deviceInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128}); 
+    deviceInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
     deviceInfoScreen->embed(deviceInfoView);
 
     ScreenManager::setup({mainScreen, coordinatesScreen, dopScreen, baseInfoScreen, deviceInfoScreen});
@@ -190,10 +224,10 @@ void start()
     // Display and Views
     display = new DisplaySSD1306({DISPLAYOFFSETX, DISPLAYOFFSETY},
         [&](){ // onConnected
-            Serial.println("Display connected");
+            Serial.print(logColorGreen); Serial.println("Display connected"); Serial.print(logColorReset);
         },
         [&](){ // onTryingConnection
-            Serial.println("Display not connected. Trying...");
+            Serial.print(logColorRed); Serial.println("Display not connected. Trying..."); Serial.print(logColorReset);
         });
     logoView = new LogoView(display, {0, 0});
 
@@ -226,20 +260,25 @@ void start()
         [&](){ //onBatteryDead
             CPUPowerController::turnOff();
         });
-    Serial.println("Finished setting up battery monitor");
+    Serial.print(logColorGreen); Serial.println("Finished setting up battery monitor"); Serial.print(logColorReset);
 
     BluetoothMonitor::start(BLUETOOTHPIN,
         [&](){ // onConnected
-            Serial.println("Bluetooth connected");
+            Serial.print(logColorGreen); Serial.println("Bluetooth connected"); Serial.print(logColorReset);
             btStatusView->setStatus(true);
             btStatusView->draw();
+            digitalWrite(GNSSINTPIN, LOW);
+            delay(1000);
+            digitalWrite(GNSSINTPIN, HIGH);
+            delay(1000);
+            digitalWrite(GNSSINTPIN, LOW);
             buzzer.buzzBTConnected();
 
             GPSConfig::configureDefault();
             GPSConfig::WakeUp();
         },
         [&](){ // onDisconnected
-            Serial.println("Bluetooth disconnected");
+            Serial.print(logColorYellow); Serial.println("Bluetooth disconnected"); Serial.print(logColorReset);
             btStatusView->setStatus(false);
             btStatusView->draw();
             buzzer.buzzBTDisconnected();
@@ -248,19 +287,19 @@ void start()
             GPSConfig::Sleep();
 
         });
-    Serial.println("Finished setting up bluetooth monitor");
+    Serial.print(logColorGreen); Serial.println("Finished setting up bluetooth monitor"); Serial.print(logColorReset);
 
     GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
         [&](){ // onConnected
-            Serial.println("GNSS connected");
+            Serial.print(logColorGreen); Serial.println("GNSS connected"); Serial.print(logColorReset);
             GPSConfig::configureDefault();
             GPSConfig::Sleep();
         },
         [&](){ // onTryingConnection
-            Serial.println("GNSS not connected. Trying...");
+            Serial.print(logColorRed); Serial.println("GNSS not connected. Trying..."); Serial.print(logColorReset);
         },
         [&](GPSConfig::GPSData& data){ // update
-        Serial.print("Solution type: ");
+        Serial.print(logColorCyan); Serial.print("Solution type: ");
             switch(data.solType)
             {
                 case GPSConfig::GnssOff:
@@ -298,6 +337,8 @@ void start()
                 default:
                     Serial.println("Unknown");
             }
+            Serial.print(logColorReset);
+
             solutionTypeView->draw();
 
             if(data.solType < GPSConfig::NoFix)
@@ -405,56 +446,72 @@ void externalPowerDisconnected()
 
 void setup()
 {
+    delay(3000);
     analogReadResolution(10);
     analogReference(AR_INTERNAL2V23);
 
+    pinMode(GNSSINTPIN, OUTPUT);
+    pinMode(GNSSRSTPIN, INPUT);
+    pinMode(GNSSPPSPIN, INPUT);
+    pinMode(GNSSRTKPIN, INPUT);
+    pinMode(GNSSFENCEPIN, INPUT);
+
+    digitalWrite(GNSSINTPIN, LOW);
     // I2C and UART
     Wire.begin();
+    Wire.setClock(400000);
 	Serial.begin(MONITOR_SERIAL_BAUD);
-	Serial.println("UARTS & I2C Initialized...");
+	Serial.print(logColorGreen); Serial.println("UARTS & I2C Initialized..."); Serial.print(logColorReset);
     peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
-    Serial.println("Setting up power control");
+    Serial.print(logColorGreen); Serial.println("Setting up power control"); Serial.print(logColorReset);
 
     CPUPowerController::setup(ONOFFPIN, MAINPOWERPIN, CHARGINGPIN,
         [&](bool onOffState){ // onTurnOnOff
             if(onOffState)
             {
-                Serial.println("Turned On");
+                Serial.print(logColorGreen); Serial.println("Turned On"); Serial.print(logColorReset);
                 start();
             }
             else
             {
-                Serial.println("Turned Off");
+                Serial.print(logColorRed); Serial.println("Turned Off"); Serial.print(logColorReset);
                 stop();
             }
         },
         [&](bool chargingState){
             if(chargingState)
             {
-                Serial.println("External Power Connected");
+                Serial.print(logColorGreen); Serial.println("External Power Connected"); Serial.print(logColorReset);
                 externalPowerConnected();
             }
             else
             {
-                Serial.println("External Power Disconnected");
+                Serial.print(logColorRed); Serial.println("External Power Disconnected"); Serial.print(logColorReset);
                 externalPowerDisconnected();
             }
         });
 
+    //schedule.AddEvent(100, [](){ watchd.clear(); });
     schedule.AddEvent(100, LED::refreshInstances);
     schedule.AddEvent(200, ScreenManager::refresh);
     schedule.AddEvent(500, CPUPowerController::checkOnOffStatus);
     schedule.AddEvent(750, CPUPowerController::checkCharging);
+    schedule.AddEvent(500, GPSConfig::checkUblox);
     schedule.AddEvent(1000, GPSConfig::checkUbloxCallbacks);
+    //schedule.AddEvent(5, GPSConfig::checkUblox);
+    //schedule.AddEvent(10, GPSConfig::checkUbloxCallbacks);
     schedule.AddEvent(1200, BluetoothMonitor::checkStatus);
     schedule.AddEvent(1500, GPSConfig::checkStatus);
     schedule.AddEvent(5000, BatteryMonitor::checkStatus);
 
-    Serial.println("Finished Setup");
+    //watchd.attachShutdown([](){ Serial.println("Soft shutdown"); watchd.clear(); });
+    //watchd.setup(WDT_SOFTCYCLE16S);
+
+    Serial.print(logColorGreen); Serial.println("Finished Setup"); Serial.print(logColorReset);
 }
 
 void loop()
 {
-    GPSConfig::checkUblox();
     schedule.Update();
+    //watchd.clear();  // refresh wdt - before it loops
 }

@@ -53,6 +53,7 @@ namespace GNSS_RTK_ROVER
         } else {
             epoweroffCount = 0;
         }
+
         if(epoweroffCount >= 5)
         {
             Serial.println("Restarting");
@@ -121,7 +122,8 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::turnOnPowerModule()
     {
-        digitalWrite(mainPowerPin, LOW);
+        //digitalWrite(mainPowerPin, LOW);
+        digitalWrite(mainPowerPin, HIGH);
     }
 
     void CPUPowerController::turnOffPowerModule()

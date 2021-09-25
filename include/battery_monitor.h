@@ -6,11 +6,10 @@
 #define BATTERYPIN A1
 #define AREF 2.23L
 #define VOLTAGE_DIVIDER 2.00L
-#define CORRECTION_CHARGING -0.06L
-#define CORRECTION_NO_CHARGING -0.03L
+#define CORRECTION_CHARGING -0.00L
+#define CORRECTION_NO_CHARGING -0.00L
 #define READ_SAMPLES_COUNT 100 //How many reads to get an average
-#define BATTERY_DEAD_VOLT 3.60
-
+#define BATTERY_DEAD_VOLT 3.55
 namespace GNSS_RTK_ROVER
 {
 	class BatteryMonitor

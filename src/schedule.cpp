@@ -1,8 +1,10 @@
+#include <string>
+
 #include "Timer.h"
 
 #include "schedule.h"
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
     void Schedule::AddEvent(unsigned long period, void (*callback)(void))
     {
@@ -20,9 +22,14 @@ namespace GNSS_RTK_ROVER
 
     void Schedule::Update()
     {
-        for(uint8_t i = 0; i < this->timersCount; i++)
+        for(uint8_t timerIndex = 0; timerIndex < this->timersCount; timerIndex++)
         {
-            this->events[i].update();
+            this->Update(timerIndex);
         }
+    }
+
+    void Schedule::Update(uint8_t timerIndex)
+    {
+        this->events[timerIndex].update();
     }
 }

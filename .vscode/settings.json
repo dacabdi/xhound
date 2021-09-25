@@ -11,5 +11,6 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "streambuf": "cpp"
-    }
+    },
+    "python.linting.pylintEnabled": true
 }

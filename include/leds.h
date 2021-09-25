@@ -11,7 +11,7 @@ namespace GNSS_RTK_ROVER
 	{
 		public:
 		LED() {};
-		LED(int _ledPin) : ledPin(_ledPin), intOn(0) { pinMode(ledPin, OUTPUT); addInstance(this); }
+		explicit LED(int _ledPin) : ledPin(_ledPin), intOn(0) {pinMode(ledPin, OUTPUT); addInstance(this); }
 		void set(uint8_t intOn, uint16_t blinkPeriod = 0, uint8_t intOff = 0);
 		void refresh();
 

@@ -14,11 +14,11 @@ namespace GNSS_RTK_ROVER
         static void checkCharging();
         static void turnOn();
         static void turnOff();
+        static void turnOffPowerModule();
 
         private:
         CPUPowerController();
         static void turnOnPowerModule();
-        static void turnOffPowerModule();
         static void onOffSwitcher();
 
         static int onOffPin;

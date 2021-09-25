@@ -41,16 +41,18 @@ namespace GNSS_RTK_ROVER
         gnss.factoryDefault();
         configurePorts();
         configureForNMEA();
-        gnss.setNavigationFrequency(2);
+        gnss.setNavigationFrequency(10);
         configureAntenna();
         gnss.saveConfiguration();
         Serial.print("GNSS Protocol version: "); Serial.print(gnss.getProtocolVersionHigh()); Serial.print("."); Serial.println(gnss.getProtocolVersionLow());
         Serial.println("GNSS just got reconfigured to default settings");
+        //GPSConfig::factoryReset(); //Uncomment to Factory Reset the GNSS
     }
 
     void GPSConfig::Sleep()
     {
-        gnss.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX|VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0|VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1|VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS);
+        //gnss.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX);
+        gnss.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
         Serial.println("GNSS is SLEEPING ...");
         data.solType = GnssOff;
         gnssOff = true;
@@ -92,8 +94,8 @@ namespace GNSS_RTK_ROVER
         gnss.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3);
         gnss.setPortOutput(COM_PORT_UART2, COM_TYPE_RTCM3);
 
-        gnss.setPortInput(COM_PORT_USB, COM_TYPE_UBX);
-        gnss.setPortOutput(COM_PORT_USB, COM_TYPE_UBX);
+        gnss.setPortInput(COM_PORT_USB, COM_TYPE_UBX | COM_TYPE_NMEA);
+        gnss.setPortOutput(COM_PORT_USB, COM_TYPE_UBX | COM_TYPE_NMEA);
 
         gnss.setPortInput(COM_PORT_I2C, COM_TYPE_UBX);
         gnss.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX);
@@ -106,7 +108,7 @@ namespace GNSS_RTK_ROVER
     {
         gnss.setAutoPVTcallback(&resolvePVT);
         gnss.setAutoDOPcallback(&resolveDOP);
-        gnss.setAutoRELPOSNEDcallback(&resolveRELPOSNED);   
+        gnss.setAutoRELPOSNEDcallback(&resolveRELPOSNED);
     }
 
     void GPSConfig::checkStatus()
@@ -133,16 +135,16 @@ namespace GNSS_RTK_ROVER
     void GPSConfig::resolvePVT(UBX_NAV_PVT_data_t packet)
     {
         Serial.println("GPSConfig :: Got PVT");
-        
+
         // Coordinates
         data.lat = packet.lat;
         data.lon = packet.lon;
         data.alt = double(packet.hMSL) * 0.00328084;
-        
+
         // SIV
         data.siv = packet.numSV;
 
-        // Solution Type 
+        // Solution Type
         if(gnssOff)
         {
             data.solType = GnssOff;
@@ -213,6 +215,7 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::connect()
     {
+        gnss.enableDebugging();
         while(!gnss.begin())
         {
             onTryingConnection();
@@ -384,7 +387,7 @@ namespace GNSS_RTK_ROVER
         data.solType = NoFix;
     }
 
-    void GPSConfig::resolveCoordinates() 
+    void GPSConfig::resolveCoordinates()
     {
         data.lat   = gnss.packetUBXNAVPVT->data.lat;
         data.lon   = gnss.packetUBXNAVPVT->data.lon;

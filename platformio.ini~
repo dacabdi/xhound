@@ -25,5 +25,6 @@ lib_deps =
 build_flags = -w
 extra_scripts = pre:scripts/pre_override_ringbuffer_size.py
 monitor_speed = 115200
-;monitor_flags = --raw ; this flag disables all monitor filters and output processing
-monitor_filters = log2file, debug, colorize
+monitor_flags = --raw
+monitor_filters = time, default
+

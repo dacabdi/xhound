@@ -66,7 +66,7 @@ namespace GNSS_RTK_ROVER
             onBatteryNotFull();
         }
 
-        Serial.print("Valid:  Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
+        Serial.print("Valid: Running Time = "); Serial.print(millis()/60000); Serial.print(" min");Serial.print(" --- ");
         Serial.print("Battery Voltage = "); Serial.print(voltage, 3); Serial.println(" V");
     }
 
@@ -109,8 +109,8 @@ namespace GNSS_RTK_ROVER
             readVoltage = ((voltageReading * AREF * VOLTAGE_DIVIDER) / 1023) +  CORRECTION_NO_CHARGING;
         }
 
-        Serial.print("Running Time = "); Serial.print(millis()/1000); Serial.print(" sec");Serial.print(" --- ");
-        Serial.print("Battery Voltage = "); Serial.print(readVoltage); Serial.println(" V");
+        // Serial.print("Running Time = "); Serial.print(millis()/1000); Serial.print(" sec");Serial.print(" --- ");
+        // Serial.print("Battery Voltage = "); Serial.print(readVoltage); Serial.println(" V");
 
         if(!validateVoltageReading(readVoltage))
         {
@@ -146,9 +146,9 @@ namespace GNSS_RTK_ROVER
         {
             if(voltage >= 3.90)
                 return 100;
-            else if(voltage >= 3.75)
+            else if(voltage >= 3.70)
                 return 66;
-            else if(voltage >= 3.61)
+            else if(voltage >= 3.56)
                 return 33;
             else
                 return 0;

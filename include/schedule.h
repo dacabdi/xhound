@@ -5,9 +5,9 @@
 
 #define SCHEDULE_MAX_SLOTS 10
 
-namespace GNSS_RTK_ROVER 
+namespace GNSS_RTK_ROVER
 {
-    class Schedule 
+    class Schedule
     {
         public:
         Schedule() : timersCount(0) {}
@@ -15,6 +15,8 @@ namespace GNSS_RTK_ROVER
         void Update();
 
         private:
+        void Update(uint8_t timerIndex);
+
         uint8_t timersCount;
         Timer events[SCHEDULE_MAX_SLOTS];
     };
