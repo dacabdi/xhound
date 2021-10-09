@@ -51,11 +51,10 @@ constexpr char btID[]  = "XH-E803";
 #define MAINPOWERPIN A2
 #define CHARGINGPIN 7
 #define BATTERYPIN A1
+#define PERIPHERALPOWERPIN 0
 
 #define RIGHTKEYPIN 4
 #define LEFTKEYPIN 5
-
-#define PERIPHERALPOWERPIN 0
 
 #define ONOFF_LEDPIN A3
 #define BATTERY_LEDPIN A4
@@ -219,15 +218,14 @@ void start()
     onOffLED.set(5);
     buzzer.buzzPowerOn();
     peripheralPower.turnOn();
-    delay(1000);
 
     // Display and Views
     display = new DisplaySSD1306({DISPLAYOFFSETX, DISPLAYOFFSETY},
         [&](){ // onConnected
-            Serial.println("Display connected"); 
+            Serial.println("Display connected");
         },
         [&](){ // onTryingConnection
-            Serial.println("Display not connected. Trying..."); 
+            Serial.println("Display not connected. Trying...");
         });
     logoView = new LogoView(display, {0, 0});
 
@@ -260,11 +258,11 @@ void start()
         [&](){ //onBatteryDead
             CPUPowerController::turnOff();
         });
-    Serial.println("Finished setting up battery monitor"); 
+    Serial.println("Finished setting up battery monitor");
 
     BluetoothMonitor::start(BLUETOOTHPIN,
         [&](){ // onConnected
-            Serial.println("Bluetooth connected"); 
+            Serial.println("Bluetooth connected");
             btStatusView->setStatus(true);
             btStatusView->draw();
             digitalWrite(GNSSINTPIN, LOW);
@@ -278,7 +276,7 @@ void start()
             GPSConfig::WakeUp();
         },
         [&](){ // onDisconnected
-            Serial.println("Bluetooth disconnected"); 
+            Serial.println("Bluetooth disconnected");
             btStatusView->setStatus(false);
             btStatusView->draw();
             buzzer.buzzBTDisconnected();
@@ -287,16 +285,16 @@ void start()
             GPSConfig::Sleep();
 
         });
-    Serial.println("Finished setting up bluetooth monitor"); 
+    Serial.println("Finished setting up bluetooth monitor");
 
     GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
         [&](){ // onConnected
-            Serial.println("GNSS connected"); 
+            Serial.println("GNSS connected");
             GPSConfig::configureDefault();
             GPSConfig::Sleep();
         },
         [&](){ // onTryingConnection
-            Serial.println("GNSS not connected. Trying..."); 
+            Serial.println("GNSS not connected. Trying...");
         },
         [&](GPSConfig::GPSData& data){ // update
         Serial.print("Solution type: ");
@@ -337,7 +335,6 @@ void start()
                 default:
                     Serial.println("Unknown");
             }
-            
 
             solutionTypeView->draw();
 
@@ -446,7 +443,7 @@ void externalPowerDisconnected()
 
 void setup()
 {
-    delay(3000);
+    delay(1000);
     analogReadResolution(10);
     analogReference(AR_INTERNAL2V23);
 
@@ -461,32 +458,34 @@ void setup()
     Wire.begin();
     Wire.setClock(400000);
 	Serial.begin(MONITOR_SERIAL_BAUD);
-	Serial.println("UARTS & I2C Initialized..."); 
-    peripheralPower.setup(PERIPHERALPOWERPIN, HIGH);
-    Serial.println("Setting up power control"); 
+	Serial.println("UARTS & I2C Initialized...");
+    delay(1000);
+    peripheralPower.setup(PERIPHERALPOWERPIN, LOW);
+    Serial.println("Setting up power control");
+    delay(1000);
 
     CPUPowerController::setup(ONOFFPIN, MAINPOWERPIN, CHARGINGPIN,
         [&](bool onOffState){ // onTurnOnOff
             if(onOffState)
             {
-                Serial.println("Turned On"); 
+                Serial.println("Turned On");
                 start();
             }
             else
             {
-                Serial.println("Turned Off"); 
+                Serial.println("Turned Off");
                 stop();
             }
         },
         [&](bool chargingState){
             if(chargingState)
             {
-                Serial.println("External Power Connected"); 
+                Serial.println("External Power Connected");
                 externalPowerConnected();
             }
             else
             {
-                Serial.println("External Power Disconnected"); 
+                Serial.println("External Power Disconnected");
                 externalPowerDisconnected();
             }
         });
@@ -507,7 +506,7 @@ void setup()
     //watchd.attachShutdown([](){ Serial.println("Soft shutdown"); watchd.clear(); });
     //watchd.setup(WDT_SOFTCYCLE16S);
 
-    Serial.println("Finished Setup"); 
+    Serial.println("Finished Setup");
 }
 
 void loop()

@@ -25,7 +25,7 @@ namespace GNSS_RTK_ROVER
         static int mainPowerPin;
         static int chargingStatePin;
         static bool onOffState;
-        static bool chargingState;
+        static bool lastChargingState;
 
         static uint64_t powerSwitchLastPressed;
         static uint8_t epoweroffCount;
