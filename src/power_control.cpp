@@ -8,14 +8,19 @@ namespace GNSS_RTK_ROVER
     int CPUPowerController::mainPowerPin;
     bool CPUPowerController::onOffState;
     int CPUPowerController::chargingStatePin;
-    bool CPUPowerController::chargingState;
+    bool CPUPowerController::lastChargingState;
     bool CPUPowerController::justChangedOnOff;
     uint8_t CPUPowerController::epoweroffCount;
     uint64_t CPUPowerController::powerSwitchLastPressed;
     std::function<void(bool)> CPUPowerController::onTurnOnOff;
     std::function<void(bool)> CPUPowerController::onChargingChanged;
 
-    void CPUPowerController::setup(int _onOffPin, int _mainPowerPin, int _chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged)
+    void CPUPowerController::setup(
+        int _onOffPin,
+        int _mainPowerPin,
+        int _chargingStatePin,
+        std::function<void(bool)> _onTurnOnOff,
+        std::function<void(bool)> _onChargingChanged)
     {
         mainPowerPin = _mainPowerPin;
         pinMode(mainPowerPin, OUTPUT);
@@ -23,21 +28,22 @@ namespace GNSS_RTK_ROVER
 
         onOffPin = _onOffPin;
         pinMode(onOffPin, INPUT_PULLUP);
+
         chargingStatePin = _chargingStatePin;
         pinMode(chargingStatePin, INPUT);
 
         onOffState = false;
-        chargingState = false;
+        lastChargingState = false;
         onTurnOnOff = _onTurnOnOff;
         epoweroffCount = 0;
         onChargingChanged = _onChargingChanged;
         justChangedOnOff = false;
         attachInterrupt(digitalPinToInterrupt(onOffPin), onOffSwitcher, FALLING);
 
-        if(!isCharging())
-            turnOn();
-        else
+        if(isCharging())
             turnOff();
+        else
+            turnOn();
     }
 
     void CPUPowerController::onOffSwitcher()
@@ -95,6 +101,7 @@ namespace GNSS_RTK_ROVER
     {
         pinMode(mainPowerPin, OUTPUT);
         onOffState = true;
+        turnOnPowerModule();
         onTurnOnOff(onOffState);
     }
 
@@ -112,23 +119,25 @@ namespace GNSS_RTK_ROVER
 
     void CPUPowerController::checkCharging()
     {
-        auto currState = isCharging();
-        if(currState != chargingState)
+        auto currChargingState = isCharging();
+        if(currChargingState != lastChargingState)
         {
-            chargingState = currState;
-            onChargingChanged(chargingState);
+            lastChargingState = currChargingState;
+            onChargingChanged(lastChargingState);
         }
     }
 
     void CPUPowerController::turnOnPowerModule()
     {
         //digitalWrite(mainPowerPin, LOW);
+        Serial.println("Setting UP CPU Power Control");
         digitalWrite(mainPowerPin, HIGH);
     }
 
     void CPUPowerController::turnOffPowerModule()
     {
-        pinMode(mainPowerPin, INPUT); // set pin in High-Z mode
+        //pinMode(mainPowerPin, INPUT); // set pin in High-Z mode
+        digitalWrite(mainPowerPin, LOW);
     }
 
     void PeripheralPowerController::setup(int powerPin, PinStatus defaultState)
@@ -140,11 +149,15 @@ namespace GNSS_RTK_ROVER
 
     void PeripheralPowerController::turnOn()
     {
-        digitalWrite(m_powerPin, LOW);
+        digitalWrite(m_powerPin, HIGH);
+        Serial.println("Turning Peripherals ON");
+        delay(1000);
     }
 
     void PeripheralPowerController::turnOff()
     {
-        digitalWrite(m_powerPin, HIGH);
+        digitalWrite(m_powerPin, LOW);
+        Serial.println("Turning Peripherals OFF");
+        delay(1000);
     }
 }

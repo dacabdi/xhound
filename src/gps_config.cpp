@@ -215,7 +215,7 @@ namespace GNSS_RTK_ROVER
 
     void GPSConfig::connect()
     {
-        gnss.enableDebugging();
+        //gnss.enableDebugging(SerialUSB, false);
         while(!gnss.begin())
         {
             onTryingConnection();
