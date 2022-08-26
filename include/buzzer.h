@@ -5,37 +5,81 @@
 
 namespace GNSS_RTK_ROVER
 {
-    class Buzzer 
+    class Buzzer
     {
         public:
         Buzzer(int buzzPin) : m_buzzPin(buzzPin) { pinMode(m_buzzPin, OUTPUT); }
 
         void buzzPowerOn();
         void buzzPowerOff();
+        void buzzCharging();
+        void buzzNoCharging();
+        void buzzBatteryZero();
+        void buzzFixedRTK();
+        void buzzFloatRTK();
+        void buzzBaseMode();
+        void buzzRoverMode();
+        void buzzBTConnected();
+        void buzzBTDisconnected();
 
         private:
         int m_buzzPin;
     };
-    
+
     inline void Buzzer::buzzPowerOn()
     {
-        for(int i = 0; i < 5; i++)
-        {
-            digitalWrite(m_buzzPin, HIGH); 
-            delay(40); 
-            digitalWrite(m_buzzPin, LOW); 
-            delay(60);
-        }
+        tone(m_buzzPin, NOTE_A4, 150); delay(200); tone(m_buzzPin, NOTE_B4, 200); delay(250); noTone(m_buzzPin);
     }
 
     inline void Buzzer::buzzPowerOff()
     {
-        for(int i = 0; i < 3; i++)
+        tone(m_buzzPin, NOTE_B4, 150); delay(200); tone(m_buzzPin, NOTE_A4, 200); delay(250); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzCharging()
+    {
+        tone(m_buzzPin, NOTE_C4, 150); delay(200); tone(m_buzzPin, NOTE_D4, 200); delay(250); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzNoCharging()
+    {
+        tone(m_buzzPin, NOTE_D4, 150); delay(200); tone(m_buzzPin, NOTE_C4, 200); delay(250); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzBatteryZero()
+    {
+        tone(m_buzzPin, NOTE_A5, 150); delay(150); tone(m_buzzPin, NOTE_D6, 150); delay(150); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzBTConnected()
+    {
+        tone(m_buzzPin, NOTE_A6, 150); delay(200); tone(m_buzzPin, NOTE_G6, 200); delay(250); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzBTDisconnected()
+    {
+        tone(m_buzzPin, NOTE_G6, 150); delay(200); tone(m_buzzPin, NOTE_A6, 200); delay(250); noTone(m_buzzPin);
+    }
+
+    inline void Buzzer::buzzBaseMode()
+    {
+        for(int i = 0; i < 2; i++)
         {
-            digitalWrite(m_buzzPin, HIGH); 
-            delay(100); 
-            digitalWrite(m_buzzPin, LOW); 
-            delay(50);
+            digitalWrite(m_buzzPin, HIGH);
+            delay(20);
+            digitalWrite(m_buzzPin, LOW);
+            delay(30);
+        }
+    }
+
+    inline void Buzzer::buzzRoverMode()
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            digitalWrite(m_buzzPin, HIGH);
+            delay(20);
+            digitalWrite(m_buzzPin, LOW);
+            delay(30);
         }
     }
 }

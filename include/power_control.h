@@ -8,30 +8,41 @@ namespace GNSS_RTK_ROVER
     class CPUPowerController
     {
         public:
-        static void setup(int onOffPin, std::function<void()> onWake, std::function<void()> onSleep);
-        static void checkForSleep();
+        static void setup(int onOffPin, int mainPowerPin, int chargingStatePin, std::function<void(bool)> _onTurnOnOff, std::function<void(bool)> _onChargingChanged);
+        static bool isCharging();
+        static void checkOnOffStatus();
+        static void checkCharging();
+        static void turnOn();
+        static void turnOff();
+        static void turnOffPowerModule();
 
         private:
         CPUPowerController();
-        static void changeState();
+        static void turnOnPowerModule();
+        static void onOffSwitcher();
 
-        static volatile bool m_gotosleep;
-        static int m_onOffPin;
+        static int onOffPin;
+        static int mainPowerPin;
+        static int chargingStatePin;
+        static bool onOffState;
+        static bool lastChargingState;
 
-        static std::function<void()> m_onWake;
-        static std::function<void()> m_onSleep;
+        static uint64_t powerSwitchLastPressed;
+        static uint8_t epoweroffCount;
+        static bool justChangedOnOff;
+        static std::function<void(bool)> onTurnOnOff;
+        static std::function<void(bool)> onChargingChanged;
     };
 
-    class PeriferalPowerController
+    class PeripheralPowerController
     {
-      public:
-      PeriferalPowerController(int powerPin) : m_powerPin(powerPin) { pinMode(m_powerPin, OUTPUT); }
+        public:
+        void setup(int powerPin, PinStatus defaultState);
+        void turnOn();
+        void turnOff();
 
-      void turnOn();
-      void turnOff();
-
-      private:
-      int m_powerPin;
+        private:
+        int m_powerPin;
     };
 }
 

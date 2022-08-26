@@ -39,30 +39,30 @@ namespace GNSS_RTK_ROVER
     bool UBXEavesdropper::read()
     {
         // read a byte from the serial port
-        while (m_istream.available()) 
+        while (m_istream.available())
         {
             m_byte = m_istream.read();
             // identify the packet preamble
-            if (m_parserState < sizeof(m_preamble)) 
+            if (m_parserState < sizeof(m_preamble))
             {
                 readPreamble();
-            } 
-            else 
+            }
+            else
             {
                 // read header
-                if ((m_parserState - sizeof(m_preamble)) < sizeof(Header)) 
+                if ((m_parserState - sizeof(m_preamble)) < sizeof(Header))
                 {
                     readHeader();
                 }
                 else if ((m_parserState - sizeof(m_preamble)) - sizeof(Header) < m_header.msg_length)
                 {
                     readPayload();
-                } 
+                }
                 else if ((m_parserState - sizeof(m_preamble)) - sizeof(Header) - m_header.msg_length < sizeof(m_checksum))
                 {
                     if(readChecksum())
                         return true;
-                } 
+                }
             }
         }
         return false;
@@ -112,7 +112,7 @@ namespace GNSS_RTK_ROVER
     {
         CK[0] = 0;
         CK[1] = 0;
-        for (uint8_t i = 0; i < length; i++) 
+        for (uint8_t i = 0; i < length; i++)
         {
             CK[0] += payload[i];
             CK[1] += CK[0];

@@ -25,16 +25,6 @@ lib_deps =
 build_flags = -w
 extra_scripts = pre:scripts/pre_override_ringbuffer_size.py
 monitor_speed = 115200
-;monitor_flags = --raw ; this flag disables all monitor filters and output processing
-monitor_filters = log2file, time
+monitor_flags = --raw
+monitor_filters = time, default
 
-debug_tool = jlink
-build_type = debug
-debug_build_flags = -O0 -ggdb3 -g3
-debug_init_cmds =
-  target remote $DEBUG_PORT
-  file "$PROG_PATH"
-  load "$PROG_PATH"
-  $INIT_BREAK
-  monitor reset
-  monitor halt

@@ -14,7 +14,7 @@ namespace GNSS_RTK_ROVER
         virtual double getLatCorr() = 0;
         virtual double getLonCorr() = 0;
         virtual double getAltCorr() = 0;
-    }; 
+    };
 
     // Correction Provider based on Euler Angles
     class EACorProv : public CorProv
@@ -22,7 +22,7 @@ namespace GNSS_RTK_ROVER
         public:
         // unitHeight: distance from the tip of the bar to the antenna
         // eaProv: euler angles provider
-        EACorProv(double unitHeight, EAProv* eaProv) : m_unitHeight(unitHeight), m_eaProv(eaProv) {};
+        EACorProv(double unitHeight, EAProv* eaProv) : m_unitHeight(unitHeight), m_eaProv(eaProv), m_correction({0}) {};
         void calculateCorrection();
 
         double getLatCorr() { return m_correction[0]; };

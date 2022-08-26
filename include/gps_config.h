@@ -3,37 +3,96 @@
 
 #include "Arduino.h"
 
+#define GNSS_CALLS_MAXWAIT 250
+
 namespace GNSS_RTK_ROVER
 {
     class GPSConfig
     {
         public:
-        GPSConfig(int serialBaud, std::function<void()> onConnected, std::function<void()> onTryingConnection,
-            std::function<void()> onReset, std::function<void()> onNMEA, std::function<void()> onUBX);
-        void initialize();
-        void factoryReset();
-        void checkForStatus();
-        void configureForNMEA();
-        uint8_t getSolution();
+        enum SolutionType
+        {
+            GnssOff,
+            UnknownSolutionType,
+            NoFix,
+            DeadReckoning,
+            TwoDFix,
+            ThreeDFix,
+            GNSS,
+            DGPS,
+            TimeFix,
+            FloatRTK,
+            FixedRTK
+        };
+
+        enum Mode
+        {
+            UnknownMode,
+            Rover,
+            Base
+        };
+
+        struct GPSData
+        {
+            SolutionType solType;
+            Mode mode;
+            long lat;
+            long lon;
+            float_t alt;
+            uint16_t siv;
+            float_t hdop;
+            float_t vdop;
+            float_t pdop;
+            uint16_t refID;
+            int32_t refDistance;
+        };
+
+        static void start(int _serialBaudUart1, int _serialBaudUart2, std::function<void()> onConnected, std::function<void()> onTryingConnection,
+            std::function<void(GPSData&)> onUpdate);
+        static void stop();
+        static void checkStatus();
+        static void checkUblox();
+        static void checkUbloxCallbacks();
+        static void configureDefault();
+        static void WakeUp();
+        static void Sleep();
+
+        static SolutionType getSolutionType();
+        static Mode getMode();
+        static std::pair<String, String> getLatLonHRPretty();
 
         private:
-        void connect();
-        void configureUnusedPorts();
-        void configureI2C();
-        void configureNMEAMsgs();
-        void disableUBXNavMsgs();
-        void disableUBXRxmMsgs();
-        void configureForUBX();
-        
-        SFE_UBLOX_GPS m_gps;
-        int m_serialBaud;
-        bool m_usingUBX;
-        int m_checkCount;
-        std::function<void()> m_onConnected;
-        std::function<void()> m_onTryingConnection;
-        std::function<void()> m_onReset;
-        std::function<void()> m_onNMEA;
-        std::function<void()> m_onUBX;
+        static void connect();
+        static void factoryReset();
+        static void configurePorts();
+        static void configureAntenna();
+        static void configureForNMEA();
+        static void configureNMEAMsgs();
+        static void disableUBXNavMsgs();
+        static void disableUBXRxmMsgs();
+        static void configureAsBase();
+        static void configureDisableBase();
+
+        static void setAutoCalls();
+        static void resolvePVT(UBX_NAV_PVT_data_t packet);
+        static void resolveDOP(UBX_NAV_DOP_data_t packet);
+        static void resolveRELPOSNED(UBX_NAV_RELPOSNED_data_t packet);
+        static void resolveSolutionType();
+        static void resolveCoordinates();
+        static void resolveSIV();
+        static void resolveDOP();
+        static void resolveReferenceStation();
+
+        static SFE_UBLOX_GNSS gnss;
+        static int serialBaudUart1;
+        static int serialBaudUart2;
+
+        static bool initialized;
+        static bool gnssOff;
+        static GPSData data;
+        static std::function<void()> onConnected;
+        static std::function<void()> onTryingConnection;
+        static std::function<void(GPSData&)> onUpdate;
     };
 }
 

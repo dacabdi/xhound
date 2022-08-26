@@ -1,279 +1,516 @@
 #undef min
 #undef max
 
+#define DBGON
+
+#include <vector>
 #include <functional>
-#include <string> 
+#include <map>
+#include <string>
+#include <utility>
+#include <cstdlib>
 
 #include <Arduino.h>
 #include <Wire.h>
+#include <Timer.h>
+#include <WDTZero.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "SparkFun_Ublox_Arduino_Library.h"
+#include "SparkFun_u-blox_GNSS_Arduino_Library.h"
+#include <FlashStorage.h>
 
 #include "power_control.h"
+#include "pitches.h"
 #include "buzzer.h"
+#include "graphics.h"
 #include "display.h"
 #include "gps_config.h"
 #include "eulerAngl.h"
 #include "correction.h"
 #include "eavesdrop.h"
 #include "bitmaps.h"
+#include "battery_monitor.h"
+#include "bluetooth_monitor.h"
+#include "rec_monitor.h"
+#include "schedule.h"
+#include "leds.h"
+#include "screens.h"
+#include "views.h"
+#include "views_menu.h"
+
+// Device Info
+constexpr char model[] = "XHound V1.27";
+constexpr char sn[]    = "XH-000000-00";
+constexpr char btID[]  = "XH-E803";
 
 #define MONITOR_SERIAL_BAUD 115200
-#define EAVESDROP_SERIAL_BAUD 38400
+#define GPS_UART1_BAUD 115200
+#define GPS_UART2_BAUD 115200
 
-#define BTSTATEPIN 0
 #define ONOFFPIN 1
-#define POWERPIN 2
-#define BUZZERPIN 3
+#define MAINPOWERPIN A2
+#define CHARGINGPIN 7
+#define BATTERYPIN A1
+#define PERIPHERALPOWERPIN 0
+
+#define RIGHTKEYPIN 4
+#define LEFTKEYPIN 5
+
+#define ONOFF_LEDPIN A3
+#define BATTERY_LEDPIN A4
+#define RTK_LEDPIN 3
+#define DGPS_LEDPIN 2
+
+#define BUZZERPIN A0
+#define BLUETOOTHPIN 6
+
+#define GNSSINTPIN A5
+#define GNSSRSTPIN A6
+#define GNSSPPSPIN 8
+#define GNSSRTKPIN 9
+#define GNSSFENCEPIN 10
+
+#define DISPLAYOFFSETX 4
+#define DISPLAYOFFSETY 0
 
 using namespace GNSS_RTK_ROVER;
 
-PeriferalPowerController gps_bt_dp_power(POWERPIN);
+PeripheralPowerController peripheralPower;
+WDTZero watchd;
+
 Buzzer buzzer(BUZZERPIN);
-DisplaySSD1306* display;
 
-GPSConfig* gpsConfig;
-Eavesdropper* eavesdropper;
-SimpleEavesdropper simple_eavesdropper(Serial1);
-UBXEavesdropper ubx_eavesdropper(Serial1);
+LED onOffLED(ONOFF_LEDPIN);
+LED batteryLED(BATTERY_LEDPIN);
+LED rtkLED(RTK_LEDPIN);
+LED dgpsLED(DGPS_LEDPIN);
 
-bool btConnectionLastState = false;
-int checkCarriesSolutionFlag = 0;
 
-void checkBTState()
+Canvas* display;
+LogoView* logoView;
+
+CompositeComponent* mainScreen;
+DivisionLineView* mainDivisionLineView;
+BatteryView* batteryView;
+BTStatusView* btStatusView;
+SolutionTypeView* solutionTypeView;
+SIVView* sivView;
+VoltageView* voltageView;
+
+CompositeComponent* coordinatesScreen;
+CoordinatesView* coordinatesView;
+
+CompositeComponent* dopScreen;
+DOPScreenView* dopScreenView;
+
+CompositeComponent* baseInfoScreen;
+BaseInfoView* baseInfoView;
+
+CompositeComponent* deviceInfoScreen;
+DeviceInfoView* deviceInfoView;
+
+Schedule schedule;
+
+// #ifdef __arm__
+// // should use uinstd.h to define sbrk but Due causes a conflict
+// extern "C" char* sbrk(int incr);
+// #else  // __ARM__
+// extern char *__brkval;
+// #endif  // __arm__
+
+// int freeMemory() {
+//   char top;
+// #ifdef __arm__
+//   return &top - reinterpret_cast<char*>(sbrk(0));
+// #elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+//   return &top - __brkval;
+// #else  // __arm__
+//   return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+// #endif  // __arm__
+// }
+
+// void reportMemUsage()
+// {
+//     const auto msg = std::string("TRACE: Free memory left ") + std::to_string(freeMemory());
+//     Serial.println(msg.c_str());
+// }
+
+void createScreens()
 {
-    bool btConnectionCurrentState = digitalRead(BTSTATEPIN);
+    // Main screen
+    mainDivisionLineView = new DivisionLineView(display, {0, 17});
+    batteryView = new BatteryView(display, {114, 1});
+    btStatusView = new BTStatusView(display, {103, 0});
+    solutionTypeView = new SolutionTypeView(display, {0, 0});
+    sivView = new SIVView(display, {0, 22});
+    voltageView = new VoltageView(display, {70, 22});
+    mainScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    mainScreen->embed(mainDivisionLineView);
+    mainScreen->embed(batteryView);
+    mainScreen->embed(btStatusView);
+    mainScreen->embed(solutionTypeView);
+    mainScreen->embed(sivView);
+    mainScreen->embed(voltageView);
 
-    if(btConnectionCurrentState != btConnectionLastState)
-    {
-        if(btConnectionCurrentState)
-        {
-            Serial.println("BT Connected");
-            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(84, 0, bt_on, 21, 32, WHITE);
-        }
-        else
-        {
-            Serial.println("BT disconnected, defaulting GNSS config");
-            display->printBitMap(84, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(84, 0, bt_off, 21, 32, WHITE);
-            gpsConfig->configureForNMEA();
-        }
+    // Coordinates screen
+    coordinatesView = new CoordinatesView(display, {0, 0});
+    coordinatesScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    coordinatesScreen->embed(coordinatesView);
 
-        btConnectionLastState = btConnectionCurrentState;
-    }
+    // DOP screen
+    dopScreenView = new DOPScreenView(display, {0, 0});
+    dopScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    dopScreen->embed(dopScreenView);
+
+    // BaseInfo screen
+    baseInfoView = new BaseInfoView(display, {0, 0});
+    baseInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    baseInfoScreen->embed(baseInfoView);
+
+    // DeviceInfo screen
+    deviceInfoView = new DeviceInfoView(display, {0, 0}, String(model), String(sn), String(btID));
+    deviceInfoScreen = new CompositeComponent(display, {0, 0}, {32, 128});
+    deviceInfoScreen->embed(deviceInfoView);
+
+    ScreenManager::setup({mainScreen, coordinatesScreen, dopScreen, baseInfoScreen, deviceInfoScreen});
+
+    pinMode(RIGHTKEYPIN, INPUT_PULLUP);
+    pinMode(LEFTKEYPIN, INPUT_PULLUP);
+    attachInterrupt(RIGHTKEYPIN, ScreenManager::queueNextScreen, FALLING);
+    attachInterrupt(LEFTKEYPIN, ScreenManager::queuePreviousScreen, FALLING);
 }
 
-void checkAndDisplayCarrierSolution() 
+void deleteScreens()
 {
-    if(!checkCarriesSolutionFlag)
-    {
-        switch(gpsConfig->getSolution())
-        {
-            case 0:
-                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-                display->printBitMap(0, 0, dgps, 64, 15, WHITE);
-                Serial.println("No Solution");
-                break;
-            case 1:
-                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-                display->printBitMap(0, 0, float_rtk, 64, 15, WHITE);
-                Serial.println("Float RTK");
-                break;
-            case 2:
-                display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-                display->printBitMap(0, 0, fixed_rtk, 64, 15, WHITE);
-                Serial.println("Fix RTK");
-            break;
-        }
-    }
-    checkCarriesSolutionFlag = (checkCarriesSolutionFlag + 1) % 1000000;
+    ScreenManager::stop();
+
+    // Main screen
+    delete mainScreen;
+    delete mainDivisionLineView;
+    delete batteryView;
+    delete btStatusView;
+    delete solutionTypeView;
+    delete sivView;
+    delete voltageView;
+
+    // Coordinates screen
+    delete coordinatesScreen;
+    delete coordinatesView;
+
+    // Coordinates screen
+    delete dopScreen;
+    delete dopScreenView;
+
+    // BaseInfo screen
+    delete baseInfoScreen;
+    delete baseInfoView;
+
+    // DeviceInfo screen
+    delete deviceInfoScreen;
+    delete deviceInfoView;
+
+    // Logo
+    delete logoView;
 }
 
-void setup()
+void start()
 {
-	Wire.begin();
-	Serial.begin(MONITOR_SERIAL_BAUD);
-	Serial1.begin(EAVESDROP_SERIAL_BAUD);
-	delay(2000);
+    onOffLED.set(5);
+    buzzer.buzzPowerOn();
+    peripheralPower.turnOn();
 
-	Serial.println("UARTS & I2C Initialized...");
-
-    pinMode(BTSTATEPIN, INPUT);
-
-    display = new DisplaySSD1306(
+    // Display and Views
+    display = new DisplaySSD1306({DISPLAYOFFSETX, DISPLAYOFFSETY},
         [&](){ // onConnected
             Serial.println("Display connected");
         },
         [&](){ // onTryingConnection
             Serial.println("Display not connected. Trying...");
         });
+    logoView = new LogoView(display, {0, 0});
 
+    BatteryMonitor::start(BATTERYPIN,
+        [&](float_t voltage, bool isCharging, bool batteryFull){ // onVoltageChanged
+            Serial.println("onVoltageChanged");
+            auto percentage = batteryFull ? 100 : BatteryPercentageProvider::getBatteryPercentage(voltage, isCharging);
+            batteryView->setPercentage(percentage);
+            batteryView->draw();
+            voltageView->setVoltage(voltage);
+            voltageView->draw();
+
+            if(percentage == 0)
+            {
+                onOffLED.set(100, 100);
+            }
+            else
+            {
+                onOffLED.set(10);
+            }
+        },
+        [&](){ // onBatteryFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255);
+        },
+        [&](){ // onBatteryNotFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255, 500);
+        },
+        [&](){ //onBatteryDead
+            CPUPowerController::turnOff();
+        });
+    Serial.println("Finished setting up battery monitor");
+
+    BluetoothMonitor::start(BLUETOOTHPIN,
+        [&](){ // onConnected
+            Serial.println("Bluetooth connected");
+            btStatusView->setStatus(true);
+            btStatusView->draw();
+            digitalWrite(GNSSINTPIN, LOW);
+            delay(1000);
+            digitalWrite(GNSSINTPIN, HIGH);
+            delay(1000);
+            digitalWrite(GNSSINTPIN, LOW);
+            buzzer.buzzBTConnected();
+
+            GPSConfig::configureDefault();
+            GPSConfig::WakeUp();
+        },
+        [&](){ // onDisconnected
+            Serial.println("Bluetooth disconnected");
+            btStatusView->setStatus(false);
+            btStatusView->draw();
+            buzzer.buzzBTDisconnected();
+
+            GPSConfig::configureDefault();
+            GPSConfig::Sleep();
+
+        });
+    Serial.println("Finished setting up bluetooth monitor");
+
+    GPSConfig::start(GPS_UART1_BAUD, GPS_UART2_BAUD,
+        [&](){ // onConnected
+            Serial.println("GNSS connected");
+            GPSConfig::configureDefault();
+            GPSConfig::Sleep();
+        },
+        [&](){ // onTryingConnection
+            Serial.println("GNSS not connected. Trying...");
+        },
+        [&](GPSConfig::GPSData& data){ // update
+        Serial.print("Solution type: ");
+            switch(data.solType)
+            {
+                case GPSConfig::GnssOff:
+                    solutionTypeView->setStatus(SolutionTypeView::GnssOff);
+                    Serial.println("GNSS Off");
+                    break;
+                case GPSConfig::NoFix:
+                    solutionTypeView->setStatus(SolutionTypeView::NoFix);
+                    Serial.println("No Fix");
+                    break;
+                case GPSConfig::TwoDFix:
+                    solutionTypeView->setStatus(SolutionTypeView::TwoDFix);
+                    Serial.println("2D Fix");
+                    break;
+                case GPSConfig::ThreeDFix:
+                    solutionTypeView->setStatus(SolutionTypeView::ThreeDFix);
+                    Serial.println("3D Fix");
+                    break;
+                case GPSConfig::TimeFix:
+                    solutionTypeView->setStatus(SolutionTypeView::TimeFix);
+                    Serial.println("Time Fix");
+                    break;
+                case GPSConfig::DGPS:
+                    solutionTypeView->setStatus(SolutionTypeView::DGPS);
+                    Serial.println("DGPS");
+                    break;
+                case GPSConfig::FloatRTK:
+                    solutionTypeView->setStatus(SolutionTypeView::FloatRTK);
+                    Serial.println("Float RTK");
+                    break;
+                case GPSConfig::FixedRTK:
+                    solutionTypeView->setStatus(SolutionTypeView::FixedRTK);
+                    Serial.println("Fixed RTK");
+                    break;
+                default:
+                    Serial.println("Unknown");
+            }
+
+            solutionTypeView->draw();
+
+            if(data.solType < GPSConfig::NoFix)
+            {
+                rtkLED.set(0);
+                dgpsLED.set(255);
+            }
+            else if(data.solType < GPSConfig::FloatRTK)
+            {
+                rtkLED.set(0);
+                dgpsLED.set(255, 500);
+            }
+            else if(data.solType < GPSConfig::FixedRTK)
+            {
+                rtkLED.set(255, 500);
+                dgpsLED.set(0);
+            }
+            else
+            {
+                rtkLED.set(255);
+                dgpsLED.set(0);
+            }
+
+            auto sel = data.solType == GPSConfig::GnssOff ? true : false;
+            coordinatesView->setPowerSaving(sel);
+            dopScreenView->setPowerSaving(sel);
+            sivView->setPowerSaving(sel);
+            baseInfoView->setPowerSaving(sel);
+
+            auto latlon = GPSConfig::getLatLonHRPretty();
+            coordinatesView->setCoordinates(latlon.first, latlon.second, data.alt);
+            coordinatesView->draw();
+
+            dopScreenView->setDOP(data.hdop, data.vdop, data.pdop);
+            dopScreenView->draw();
+
+            sivView->setSIV(data.siv);
+            sivView->draw();
+
+            baseInfoView->setInfo(data.refID, data.refDistance);
+            baseInfoView->draw();
+        });
+
+    logoView->draw();
+    delay(5000);
+    logoView->clear();
+
+    createScreens();
+}
+
+void stop()
+{
+    BatteryMonitor::start(BATTERYPIN,
+        [&](float_t voltage, bool isCharging, bool batteryFull){ // onPercentageChanged
+        },
+        [&](){ // onBatteryFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255);
+        },
+        [&](){ // onBatteryNotFull
+            if(CPUPowerController::isCharging())
+                batteryLED.set(255, 500);
+        },
+        [&](){ // onBatteryDead
+        });
+    BluetoothMonitor::stop();
+    GPSConfig::stop();
+    peripheralPower.turnOff();
+    buzzer.buzzPowerOff();
+    int counter = 2;
+    while(counter--)
+    {
+        onOffLED.set(0);
+        delay(200);
+        onOffLED.set(10);
+        delay(200);
+    }
+    onOffLED.set(0);
+
+    dgpsLED.set(0);
+    rtkLED.set(0);
+
+    delete display;
+    delete logoView;
+
+    deleteScreens();
+}
+
+void externalPowerConnected()
+{
+    buzzer.buzzCharging();
+    BatteryMonitor::setChargingState(true);
+    if(BatteryMonitor::isBatteryFull())
+        batteryLED.set(255);
+    else
+        batteryLED.set(255, 500);
+}
+
+void externalPowerDisconnected()
+{
+    buzzer.buzzNoCharging();
+    BatteryMonitor::setChargingState(false);
+    batteryLED.set(0);
+}
+
+void setup()
+{
+    delay(1000);
+    analogReadResolution(10);
+    analogReference(AR_INTERNAL2V23);
+
+    pinMode(GNSSINTPIN, OUTPUT);
+    pinMode(GNSSRSTPIN, INPUT);
+    pinMode(GNSSPPSPIN, INPUT);
+    pinMode(GNSSRTKPIN, INPUT);
+    pinMode(GNSSFENCEPIN, INPUT);
+
+    digitalWrite(GNSSINTPIN, LOW);
+    // I2C and UART
+    Wire.begin();
+    Wire.setClock(400000);
+	Serial.begin(MONITOR_SERIAL_BAUD);
+	Serial.println("UARTS & I2C Initialized...");
+    delay(1000);
+    peripheralPower.setup(PERIPHERALPOWERPIN, LOW);
     Serial.println("Setting up power control");
-    CPUPowerController::setup(ONOFFPIN,
-        [&](){ // onWake
-            buzzer.buzzPowerOn();
-            // Turn on periferics
-            gps_bt_dp_power.turnOn();
-            delay(500);
+    delay(1000);
 
-            // Reinitialize periferics
-            display->initialize();
-            gpsConfig->initialize();
-
-            display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
-            display->printBitMap(0, 0, logo_128x32, 128, 32, WHITE);
-            delay(5000);
-            display->printTextInRect("Awake ...");
-            checkBTState();
-            display->printBitMap(106, 0, clear_icon, 21, 32, BLACK);
-            display->printBitMap(106, 0, battery_100, 21, 32, WHITE);
-            display->printBitMap(0, 0, clear_icon_big, 64, 15, BLACK);
+    CPUPowerController::setup(ONOFFPIN, MAINPOWERPIN, CHARGINGPIN,
+        [&](bool onOffState){ // onTurnOnOff
+            if(onOffState)
+            {
+                Serial.println("Turned On");
+                start();
+            }
+            else
+            {
+                Serial.println("Turned Off");
+                stop();
+            }
         },
-        [&](){ // onSleep
-            buzzer.buzzPowerOff();
-            Serial.println("Turning Off ...");
-            display->printTextInRect("Turning Off ...");
-            delay(2000);
-            gps_bt_dp_power.turnOff();
-            btConnectionLastState = false;
+        [&](bool chargingState){
+            if(chargingState)
+            {
+                Serial.println("External Power Connected");
+                externalPowerConnected();
+            }
+            else
+            {
+                Serial.println("External Power Disconnected");
+                externalPowerDisconnected();
+            }
         });
 
-    Serial.println("Setting up GPS config");
-    gpsConfig = new GPSConfig(EAVESDROP_SERIAL_BAUD,
-        [](){ // onConnected
-            Serial.println("Ublox GNSS connected");
-        },
-        [](){ // onTryingConnection
-            Serial.println("Ublox GNSS not connected. Trying...");
-        },
-        [](){ // onReset
-            Serial.println("Ublox GNSS Reseted");
-        },
-        [&](){ // onNMEA
-            Serial.println("Using NMEA");
-            eavesdropper = &simple_eavesdropper;
-        },
-        [&](){ // onUBX
-            Serial.println("Using UBX");
-            // TODO temporary pass through, replace with: `eavesdropper = &ubx_eavesdropper;`
-            eavesdropper = &simple_eavesdropper;
-        });
+    //schedule.AddEvent(100, [](){ watchd.clear(); });
+    schedule.AddEvent(100, LED::refreshInstances);
+    schedule.AddEvent(200, ScreenManager::refresh);
+    schedule.AddEvent(500, CPUPowerController::checkOnOffStatus);
+    schedule.AddEvent(750, CPUPowerController::checkCharging);
+    schedule.AddEvent(500, GPSConfig::checkUblox);
+    schedule.AddEvent(1000, GPSConfig::checkUbloxCallbacks);
+    //schedule.AddEvent(5, GPSConfig::checkUblox);
+    //schedule.AddEvent(10, GPSConfig::checkUbloxCallbacks);
+    schedule.AddEvent(1200, BluetoothMonitor::checkStatus);
+    schedule.AddEvent(1500, GPSConfig::checkStatus);
+    schedule.AddEvent(5000, BatteryMonitor::checkStatus);
 
+    //watchd.attachShutdown([](){ Serial.println("Soft shutdown"); watchd.clear(); });
+    //watchd.setup(WDT_SOFTCYCLE16S);
 
     Serial.println("Finished Setup");
-	delay(2000);
 }
 
 void loop()
 {
-    checkBTState();
-    CPUPowerController::checkForSleep();
-    //gpsConfig->checkForStatus();
-	eavesdropper->eavesdrop();
-    checkAndDisplayCarrierSolution();
+    schedule.Update();
+    //watchd.clear();  // refresh wdt - before it loops
 }
-
-//----------------------Functions----------------------------------;
-
-// void displayGpsData()
-// {
-//   // First, let's collect the position data
-//   int32_t latitude = gpsConfig.getHighResLatitude();
-//   int8_t latitudeHp = gpsConfig.getHighResLatitudeHp();
-//   int32_t longitude = gpsConfig.getHighResLongitude();
-//   int8_t longitudeHp = gpsConfig.getHighResLongitudeHp();
-
-//   // Defines storage for the lat and lon units integer and fractional parts
-//   int32_t lat_int; // Integer part of the latitude in degrees
-//   int32_t lat_frac; // Fractional part of the latitude
-//   int32_t lon_int; // Integer part of the longitude in degrees
-//   int32_t lon_frac; // Fractional part of the longitude
-
-//   int32_t ellipsoid = gpsConfig.getElipsoid();
-//   int8_t ellipsoidHp = gpsConfig.getElipsoidHp();
-//   int32_t msl = gpsConfig.getMeanSeaLevel();
-//   int8_t mslHp = gpsConfig.getMeanSeaLevelHp();
-//   uint32_t accuracy = gpsConfig.getHorizontalAccuracy();
-
-//   // Calculate the latitude and longitude integer and fractional parts
-//   lat_int = latitude / 10000000; // Convert latitude from degrees * 10^-7 to Degrees
-//   lat_frac = latitude - (lat_int * 10000000); // Calculate the fractional part of the latitude
-//   lat_frac = (lat_frac * 100) + latitudeHp; // Now add the high resolution component
-//   if (lat_frac < 0) // If the fractional part is negative, remove the minus sign
-//   {
-//     lat_frac = 0 - lat_frac;
-//   }
-//   lon_int = longitude / 10000000; // Convert latitude from degrees * 10^-7 to Degrees
-//   lon_frac = longitude - (lon_int * 10000000); // Calculate the fractional part of the longitude
-//   lon_frac = (lon_frac * 100) + longitudeHp; // Now add the high resolution component
-//   if (lon_frac < 0) // If the fractional part is negative, remove the minus sign
-//   {
-//     lon_frac = 0 - lon_frac;
-//   }
-
-//   // Print the lat and lon
-//   Serial.print(" -- ");
-//   Serial.print("Lat (deg): ");
-//   Serial.print(lat_int); // Print the integer part of the latitude
-//   Serial.print(".");
-//   Serial.print(lat_frac); // Print the fractional part of the latitude
-//   if(lat_int > 0)
-//   {
-//     Serial.print(", N");
-//   }
-//   else
-//   {
-//     Serial.print(", S");
-//   }
-//   Serial.print(", Lon (deg): ");
-
-  
-//   Serial.print(lon_int); // Print the integer part of the latitude
-//   Serial.print(".");
-//   Serial.print(lon_frac); // Print the fractional part of the latitude
-//     if(lon_int > 0)
-//   {
-//     Serial.println(", E");
-//   }
-//   else
-//   {
-//     Serial.print(", W");
-//   }
-
-//   // Now define float storage for the heights and accuracy
-//   float f_ellipsoid;
-//   float f_msl;
-//   float f_accuracy;
-
-//   // Calculate the height above ellipsoid in mm * 10^-1
-//   f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
-//   // Now convert to mvoid checkAndDisplayCarrierSolution() 
-//   // Convert the horizontal accuracy (mm * 10^-1) to a float
-//   f_accuracy = accuracy;
-//   // Now convert to m
-//   f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
-
-//   // Finally, do the printing
-//   Serial.print(", Ellipsoid (m): ");
-//   Serial.print(f_ellipsoid, 4); // Print the ellipsoid with 4 decimal places
-//   Serial.print(", Mean Sea Level(m): ");
-//   Serial.print(f_msl, 4); // Print the mean sea level with 4 decimal places
-
-//   Serial.print(", Accuracy (m): ");
-//   Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
-
-//   switch(gpsConfig->getSolution())
-//   {
-//     case 0:
-//       Serial.println(", No Solution");
-//       break;
-//     case 1:
-//       Serial.println(", Float RTK");
-//       break;
-//     case 2:
-//       Serial.println(", Fix RTK");
-//       break;
-//   }
-// }

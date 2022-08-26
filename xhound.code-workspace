@@ -3,7 +3,7 @@
 		{
 			"name": "xhound",
 			"path": "."
-		}
+		},
 	],
 	"settings": {
 		"files.associations": {
